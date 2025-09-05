@@ -8,16 +8,17 @@ from datetime import datetime, timedelta, date
 import requests
 from faker import Faker
 import time
+import json
 
 # Configuração da página
 st.set_page_config(
-    page_title="Stays Analytics | Premium Dashboard Suite",
-    page_icon="🏨",
+    page_title="EduAnalytics | Dashboard Escolar Inteligente",
+    page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS personalizado elegante
+# CSS personalizado elegante (mantendo o design)
 st.markdown("""
 <style>
     /* Import Google Fonts */
@@ -35,12 +36,12 @@ st.markdown("""
     
     /* Header elegante */
     .elegant-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #2c5aa0 0%, #16537e 100%);
         padding: 3rem 2rem;
         border-radius: 20px;
         text-align: center;
         margin-bottom: 3rem;
-        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+        box-shadow: 0 20px 40px rgba(44, 90, 160, 0.15);
         position: relative;
         overflow: hidden;
     }
@@ -105,7 +106,7 @@ st.markdown("""
         left: 0;
         width: 100%;
         height: 4px;
-        background: linear-gradient(90deg, #667eea, #764ba2);
+        background: linear-gradient(90deg, #2c5aa0, #16537e);
     }
     
     .metric-icon {
@@ -117,9 +118,9 @@ st.markdown("""
         justify-content: center;
         font-size: 24px;
         margin-bottom: 1.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #2c5aa0 0%, #16537e 100%);
         color: white;
-        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 8px 16px rgba(44, 90, 160, 0.3);
     }
     
     .metric-title {
@@ -183,38 +184,12 @@ st.markdown("""
         content: '';
         width: 6px;
         height: 40px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #2c5aa0 0%, #16537e 100%);
         border-radius: 3px;
     }
     
-    /* Sidebar elegante */
-    .sidebar .sidebar-content {
-        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-        border-right: 1px solid #e2e8f0;
-    }
-    
-    /* Filtros premium */
-    .filter-container {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(230, 230, 235, 0.5);
-    }
-    
-    .filter-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    /* Cards de propriedade elegantes */
-    .property-card-premium {
+    /* Cards de turma/aluno elegantes */
+    .student-card-premium {
         background: white;
         border-radius: 16px;
         padding: 1.8rem;
@@ -225,12 +200,12 @@ st.markdown("""
         overflow: hidden;
     }
     
-    .property-card-premium:hover {
+    .student-card-premium:hover {
         transform: translateY(-3px);
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     }
     
-    .property-card-premium.high-performance::before {
+    .student-card-premium.high-performance::before {
         content: '';
         position: absolute;
         left: 0;
@@ -240,7 +215,7 @@ st.markdown("""
         background: linear-gradient(180deg, #10b981 0%, #059669 100%);
     }
     
-    .property-card-premium.medium-performance::before {
+    .student-card-premium.medium-performance::before {
         content: '';
         position: absolute;
         left: 0;
@@ -250,7 +225,7 @@ st.markdown("""
         background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
     }
     
-    .property-card-premium.low-performance::before {
+    .student-card-premium.low-performance::before {
         content: '';
         position: absolute;
         left: 0;
@@ -258,32 +233,6 @@ st.markdown("""
         width: 6px;
         height: 100%;
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-    }
-    
-    .property-name {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0.8rem;
-    }
-    
-    .property-metrics {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .property-occupancy {
-        font-size: 2rem;
-        font-weight: 800;
-        line-height: 1;
-    }
-    
-    .property-details {
-        text-align: right;
-        color: #64748b;
-        font-size: 0.9rem;
     }
     
     /* Alertas elegantes */
@@ -320,211 +269,238 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     
-    /* Tabs elegantes */
-    .stTabs [data-baseweb="tab-list"] {
+    /* Filter container */
+    .filter-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(230, 230, 235, 0.5);
+    }
+    
+    .filter-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
         gap: 0.5rem;
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 0.5rem;
     }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 3rem;
-        border-radius: 8px;
-        font-weight: 600;
-        color: #64748b;
-        background: transparent;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: white !important;
-        color: #1e293b !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Botão reserva urgente */
-    .urgent-booking {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 12px;
-        margin: 0.5rem 0;
-        font-weight: 600;
-        border: none;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-    }
-    
-    /* Cards de status */
-    .status-card {
-        padding: 1rem;
-        border-radius: 12px;
-        margin: 0.5rem 0;
-        border-left: 4px solid;
-    }
-    
-    .status-confirmed { border-left-color: #10b981; background: rgba(16, 185, 129, 0.05); }
-    .status-pending { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.05); }
-    .status-canceled { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
 </style>
 """, unsafe_allow_html=True)
 
-# Funções de dados (expandidas para suportar todos os dashboards)
+# Funções de dados escolares
 @st.cache_data(ttl=300)
-def generate_stays_comprehensive_data():
-    """Gera dataset completo para todos os dashboards"""
-    fake = Faker('pt_PT')
+def generate_school_comprehensive_data():
+    """Gera dataset completo para escola com 1000 alunos"""
+    fake = Faker('pt_BR')
     np.random.seed(42)
     
-    # Propriedades expandidas com mais dados
-    properties = [
-        {"id": "LU01F", "name": "Vibe República Premium", "type": "entire_place", "region": "São Paulo", "city": "São Paulo", "rooms": 45, "status": "active"},
-        {"id": "CP02A", "name": "Copacabana Luxury Suite", "type": "entire_place", "region": "Rio de Janeiro", "city": "Rio de Janeiro", "rooms": 32, "status": "active"},
-        {"id": "IP03B", "name": "Ipanema Ocean View", "type": "private_room", "region": "Rio de Janeiro", "city": "Rio de Janeiro", "rooms": 28, "status": "active"},
-        {"id": "CE04C", "name": "Centro Business Hub", "type": "entire_place", "region": "São Paulo", "city": "São Paulo", "rooms": 38, "status": "active"},
-        {"id": "VM05D", "name": "Vila Madalena Loft", "type": "entire_place", "region": "São Paulo", "city": "São Paulo", "rooms": 25, "status": "active"},
-        {"id": "LE06E", "name": "Leblon Beachfront", "type": "private_room", "region": "Rio de Janeiro", "city": "Rio de Janeiro", "rooms": 22, "status": "active"},
-        {"id": "PI07F", "name": "Pinheiros Modern", "type": "entire_place", "region": "São Paulo", "city": "São Paulo", "rooms": 35, "status": "maintenance"},
-        {"id": "BO08G", "name": "Botafogo Panoramic", "type": "private_room", "region": "Rio de Janeiro", "city": "Rio de Janeiro", "rooms": 30, "status": "active"},
-    ]
-    
-    # Dados de clientes recorrentes
-    recurring_clients = []
-    for i in range(50):
-        client = {
-            "client_id": f"CLI{i+1:03d}",
-            "name": fake.name(),
-            "email": fake.email(),
-            "phone": fake.phone_number(),
-            "country": np.random.choice(["Brasil", "Argentina", "EUA", "França", "Alemanha"], p=[0.4, 0.15, 0.15, 0.15, 0.15]),
-            "vip_status": np.random.choice(["Gold", "Silver", "Bronze", "Regular"], p=[0.1, 0.2, 0.3, 0.4]),
-            "total_bookings": np.random.randint(1, 15),
-            "lifetime_value": np.random.randint(1000, 25000)
+    # Estrutura da escola
+    series_structure = {
+        "Educação Infantil": {
+            "levels": ["Maternal I", "Maternal II", "Pré I", "Pré II"],
+            "students_per_class": 20,
+            "classes_per_level": 2,
+            "monthly_fee": 800
+        },
+        "Ensino Fundamental I": {
+            "levels": ["1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"],
+            "students_per_class": 25,
+            "classes_per_level": 2,
+            "monthly_fee": 950
+        },
+        "Ensino Fundamental II": {
+            "levels": ["6º Ano", "7º Ano", "8º Ano", "9º Ano"],
+            "students_per_class": 30,
+            "classes_per_level": 2,
+            "monthly_fee": 1100
+        },
+        "Ensino Médio": {
+            "levels": ["1ª Série", "2ª Série", "3ª Série"],
+            "students_per_class": 35,
+            "classes_per_level": 2,
+            "monthly_fee": 1300
         }
-        recurring_clients.append(client)
+    }
     
-    # Gerar reservas dos últimos 8 meses
-    bookings = []
-    start_date = datetime.now() - timedelta(days=240)
+    # Gerar dados de alunos
+    students = []
+    student_id = 1
     
-    for i in range(650):
-        property_data = np.random.choice(properties)
-        client_data = np.random.choice(recurring_clients)
-        
-        check_in = start_date + timedelta(days=np.random.randint(0, 240))
-        stay_duration = np.random.randint(1, 12)
-        check_out = check_in + timedelta(days=stay_duration)
-        
-        # Preços baseados na região, tipo e sazonalidade
-        base_prices = {
-            ("Rio de Janeiro", "entire_place"): 450,
-            ("Rio de Janeiro", "private_room"): 240,
-            ("São Paulo", "entire_place"): 380,
-            ("São Paulo", "private_room"): 200
-        }
-        
-        base_price = base_prices.get((property_data["region"], property_data["type"]), 280)
-        
-        # Fatores de variação de preço
-        seasonal_factor = 1.4 if check_in.month in [12, 1, 2, 6, 7] else 1.0
-        weekend_factor = 1.5 if check_in.weekday() >= 5 else 1.0
-        vip_factor = 1.2 if client_data["vip_status"] in ["Gold", "Silver"] else 1.0
-        price_variation = np.random.uniform(0.8, 1.8)
-        
-        total_price = base_price * stay_duration * seasonal_factor * weekend_factor * vip_factor * price_variation
-        
-        # Status da reserva com pesos realistas
-        booking_status = np.random.choice(
-            ["confirmed", "pending", "canceled", "checked_in", "checked_out", "no_show"], 
-            p=[0.75, 0.08, 0.04, 0.05, 0.07, 0.01]
-        )
-        
-        booking = {
-            "id": f"RES{i+1:04d}",
-            "property_id": property_data["id"],
-            "property_name": property_data["name"],
-            "property_type": property_data["type"],
-            "property_status": property_data["status"],
-            "region": property_data["region"],
-            "city": property_data["city"],
-            "check_in": check_in,
-            "check_out": check_out,
-            "guests": np.random.randint(1, 6),
-            "nights": stay_duration,
-            "total_price": round(total_price, 2),
-            "daily_rate": round(total_price / stay_duration, 2),
-            "status": booking_status,
-            "client_id": client_data["client_id"],
-            "client_name": client_data["name"],
-            "client_email": client_data["email"],
-            "client_country": client_data["country"],
-            "client_vip": client_data["vip_status"],
-            "booking_date": check_in - timedelta(days=np.random.randint(1, 60)),
-            "source": np.random.choice(["Direct", "Booking.com", "Airbnb", "Expedia", "Google", "Instagram"], p=[0.35, 0.25, 0.2, 0.1, 0.05, 0.05]),
-            "payment_method": np.random.choice(["Credit Card", "PIX", "Bank Transfer", "PayPal"], p=[0.5, 0.3, 0.15, 0.05]),
-            "special_requests": np.random.choice(["None", "Late Check-in", "Early Check-out", "Extra Bed", "Airport Transfer"], p=[0.6, 0.15, 0.15, 0.05, 0.05])
-        }
-        bookings.append(booking)
+    for segment, data in series_structure.items():
+        for level in data["levels"]:
+            for class_num in range(1, data["classes_per_level"] + 1):
+                for student_num in range(data["students_per_class"]):
+                    birth_year = {
+                        "Educação Infantil": np.random.randint(2018, 2021),
+                        "Ensino Fundamental I": np.random.randint(2013, 2018),
+                        "Ensino Fundamental II": np.random.randint(2009, 2013),
+                        "Ensino Médio": np.random.randint(2006, 2009)
+                    }[segment]
+                    
+                    student = {
+                        "student_id": f"EST{student_id:04d}",
+                        "name": fake.name(),
+                        "segment": segment,
+                        "level": level,
+                        "class": f"{level} - Turma {class_num}",
+                        "birth_date": fake.date_of_birth(minimum_age=datetime.now().year - birth_year - 1, maximum_age=datetime.now().year - birth_year + 1),
+                        "gender": np.random.choice(["Masculino", "Feminino"], p=[0.51, 0.49]),
+                        "monthly_fee": data["monthly_fee"],
+                        "scholarship": np.random.choice([0, 10, 25, 50, 100], p=[0.7, 0.15, 0.1, 0.04, 0.01]),
+                        "parent_name": fake.name(),
+                        "parent_email": fake.email(),
+                        "parent_phone": fake.phone_number(),
+                        "address": fake.address(),
+                        "enrollment_date": fake.date_between(start_date='-2y', end_date='today'),
+                        "status": np.random.choice(["Ativo", "Inativo", "Transferido"], p=[0.92, 0.05, 0.03])
+                    }
+                    students.append(student)
+                    student_id += 1
     
-    return pd.DataFrame(bookings), properties, recurring_clients
+    students_df = pd.DataFrame(students)
+    
+    # Gerar dados acadêmicos (notas por bimestre)
+    academic_data = []
+    subjects = {
+        "Educação Infantil": ["Linguagem", "Matemática", "Natureza", "Artes", "Movimento"],
+        "Ensino Fundamental I": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física"],
+        "Ensino Fundamental II": ["Português", "Matemática", "Ciências", "História", "Geografia", "Inglês", "Artes", "Ed. Física"],
+        "Ensino Médio": ["Português", "Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Inglês", "Filosofia", "Sociologia"]
+    }
+    
+    for _, student in students_df.iterrows():
+        if student['status'] == 'Ativo':
+            student_subjects = subjects[student['segment']]
+            
+            # Definir perfil do aluno (influencia nas notas)
+            performance_profile = np.random.choice(["Alto", "Médio", "Baixo"], p=[0.25, 0.65, 0.1])
+            base_performance = {"Alto": 8.5, "Médio": 7.0, "Baixo": 5.5}[performance_profile]
+            
+            for subject in student_subjects:
+                for bimester in [1, 2, 3, 4]:
+                    # Variação natural das notas
+                    note = np.random.normal(base_performance, 1.2)
+                    note = max(0, min(10, note))  # Limitar entre 0 e 10
+                    
+                    # Absences
+                    max_classes = 20  # 20 aulas por bimestre por matéria
+                    absences = np.random.poisson(2 if performance_profile == "Alto" else 4 if performance_profile == "Médio" else 7)
+                    absences = min(absences, max_classes)
+                    
+                    academic_record = {
+                        "student_id": student['student_id'],
+                        "segment": student['segment'],
+                        "level": student['level'],
+                        "class": student['class'],
+                        "subject": subject,
+                        "bimester": bimester,
+                        "grade": round(note, 1),
+                        "absences": absences,
+                        "max_classes": max_classes,
+                        "performance_profile": performance_profile,
+                        "year": 2025
+                    }
+                    academic_data.append(academic_record)
+    
+    academic_df = pd.DataFrame(academic_data)
+    
+    # Gerar dados financeiros
+    financial_data = []
+    for _, student in students_df.iterrows():
+        if student['status'] == 'Ativo':
+            # Status de pagamento baseado no perfil socioeconômico
+            payment_profile = np.random.choice(["Pontual", "Atraso Eventual", "Problemático"], p=[0.75, 0.20, 0.05])
+            
+            for month in range(1, 13):  # 12 meses
+                monthly_value = student['monthly_fee'] * (1 - student['scholarship']/100)
+                
+                if payment_profile == "Pontual":
+                    payment_status = np.random.choice(["Pago", "Pago"], p=[0.95, 0.05])
+                    days_late = 0 if payment_status == "Pago" else np.random.randint(1, 5)
+                elif payment_profile == "Atraso Eventual":
+                    payment_status = np.random.choice(["Pago", "Em Atraso"], p=[0.8, 0.2])
+                    days_late = 0 if payment_status == "Pago" else np.random.randint(1, 30)
+                else:  # Problemático
+                    payment_status = np.random.choice(["Pago", "Em Atraso", "Inadimplente"], p=[0.6, 0.25, 0.15])
+                    days_late = 0 if payment_status == "Pago" else np.random.randint(15, 90)
+                
+                financial_record = {
+                    "student_id": student['student_id'],
+                    "student_name": student['name'],
+                    "segment": student['segment'],
+                    "level": student['level'],
+                    "month": month,
+                    "year": 2025,
+                    "monthly_fee": monthly_value,
+                    "payment_status": payment_status,
+                    "days_late": days_late,
+                    "payment_profile": payment_profile
+                }
+                financial_data.append(financial_record)
+    
+    financial_df = pd.DataFrame(financial_data)
+    
+    # Gerar dados de funcionários
+    employees = []
+    departments = {
+        "Pedagógico": {"count": 45, "avg_salary": 4500, "positions": ["Professor", "Coordenador", "Orientador"]},
+        "Administrativo": {"count": 15, "avg_salary": 3200, "positions": ["Secretário", "Auxiliar", "Analista"]},
+        "Operacional": {"count": 12, "avg_salary": 2100, "positions": ["Auxiliar Limpeza", "Porteiro", "Manutenção"]},
+        "Direção": {"count": 5, "avg_salary": 8500, "positions": ["Diretor", "Vice-Diretor", "Supervisor"]}
+    }
+    
+    employee_id = 1
+    for dept, data in departments.items():
+        for _ in range(data["count"]):
+            employee = {
+                "employee_id": f"FUNC{employee_id:03d}",
+                "name": fake.name(),
+                "department": dept,
+                "position": np.random.choice(data["positions"]),
+                "salary": np.random.normal(data["avg_salary"], data["avg_salary"] * 0.2),
+                "hire_date": fake.date_between(start_date='-5y', end_date='today'),
+                "status": np.random.choice(["Ativo", "Afastado", "Férias"], p=[0.92, 0.05, 0.03]),
+                "absences_month": np.random.poisson(2)
+            }
+            employees.append(employee)
+            employee_id += 1
+    
+    employees_df = pd.DataFrame(employees)
+    
+    return students_df, academic_df, financial_df, employees_df, series_structure
 
-@st.cache_data(ttl=300)
-def generate_promotional_codes():
-    """Gera dados expandidos de códigos promocionais"""
-    codes = [
-        {"code": "PREMIUM25", "discount": 25, "type": "percent", "uses": 234, "max_uses": 300, "revenue_impact": 156800, "discount_given": 39200, "active": True, "start_date": "2025-01-01", "end_date": "2025-12-31"},
-        {"code": "EXECUTIVO15", "discount": 15, "type": "percent", "uses": 189, "max_uses": 250, "revenue_impact": 98400, "discount_given": 23100, "active": True, "start_date": "2025-01-01", "end_date": "2025-12-31"},
-        {"code": "NEGOCIOS30", "discount": 30, "type": "percent", "uses": 145, "max_uses": 200, "revenue_impact": 87600, "discount_given": 37500, "active": True, "start_date": "2025-01-01", "end_date": "2025-06-30"},
-        {"code": "FIDELIDADE", "discount": 150, "type": "fixed", "uses": 89, "max_uses": 150, "revenue_impact": 45300, "discount_given": 13350, "active": True, "start_date": "2025-01-01", "end_date": "2025-12-31"},
-        {"code": "TEMPORADA40", "discount": 40, "type": "percent", "uses": 67, "max_uses": 100, "revenue_impact": 34200, "discount_given": 22800, "active": False, "start_date": "2024-12-01", "end_date": "2025-02-28"},
-        {"code": "WEEKEND50", "discount": 50, "type": "fixed", "uses": 123, "max_uses": 200, "revenue_impact": 56700, "discount_given": 6150, "active": True, "start_date": "2025-01-01", "end_date": "2025-12-31"},
-        {"code": "FAMILIA20", "discount": 20, "type": "percent", "uses": 178, "max_uses": 300, "revenue_impact": 78900, "discount_given": 19725, "active": True, "start_date": "2025-01-01", "end_date": "2025-12-31"}
-    ]
-    return pd.DataFrame(codes)
-
-def calculate_comprehensive_kpis(df):
-    """Calcula KPIs abrangentes para todos os dashboards"""
-    current_month = datetime.now().replace(day=1)
-    last_month = (current_month - timedelta(days=1)).replace(day=1)
-    
-    current_data = df[df['check_in'] >= current_month]
-    last_month_data = df[(df['check_in'] >= last_month) & (df['check_in'] < current_month)]
-    
+def calculate_school_kpis(students_df, academic_df, financial_df, employees_df):
+    """Calcula KPIs principais da escola"""
     kpis = {}
     
-    # KPIs financeiros
-    kpis['revenue'] = current_data['total_price'].sum()
-    kpis['revenue_last'] = last_month_data['total_price'].sum()
-    kpis['revenue_change'] = ((kpis['revenue'] - kpis['revenue_last']) / kpis['revenue_last']) * 100 if kpis['revenue_last'] > 0 else 0
+    # KPIs Acadêmicos
+    current_grades = academic_df[academic_df['bimester'] == academic_df['bimester'].max()]
+    kpis['avg_grade'] = current_grades['grade'].mean()
+    kpis['approval_rate'] = (current_grades['grade'] >= 6.0).mean() * 100
+    kpis['students_at_risk'] = len(current_grades[current_grades['grade'] < 5.0]['student_id'].unique())
     
-    kpis['adr'] = current_data['daily_rate'].mean() if not current_data.empty else 0
-    kpis['adr_last'] = last_month_data['daily_rate'].mean() if not last_month_data.empty else 0
-    kpis['adr_change'] = ((kpis['adr'] - kpis['adr_last']) / kpis['adr_last']) * 100 if kpis['adr_last'] > 0 else 0
+    # KPIs Financeiros
+    current_month = datetime.now().month
+    current_financial = financial_df[financial_df['month'] == current_month]
     
-    # KPIs operacionais
-    kpis['bookings'] = len(current_data)
-    kpis['bookings_last'] = len(last_month_data)
-    kpis['bookings_change'] = ((kpis['bookings'] - kpis['bookings_last']) / kpis['bookings_last']) * 100 if kpis['bookings_last'] > 0 else 0
+    total_revenue_potential = current_financial['monthly_fee'].sum()
+    paid_revenue = current_financial[current_financial['payment_status'] == 'Pago']['monthly_fee'].sum()
+    kpis['collection_rate'] = (paid_revenue / total_revenue_potential) * 100 if total_revenue_potential > 0 else 0
+    kpis['monthly_revenue'] = paid_revenue
+    kpis['defaulting_students'] = len(current_financial[current_financial['payment_status'] == 'Inadimplente'])
     
-    # Taxa de ocupação
-    total_rooms = 255  # Total de quartos das propriedades
-    days_in_month = datetime.now().day
-    kpis['occupancy'] = (current_data['nights'].sum() / (total_rooms * days_in_month)) * 100
+    # KPIs Operacionais
+    active_students = len(students_df[students_df['status'] == 'Ativo'])
+    kpis['total_students'] = active_students
+    kpis['student_teacher_ratio'] = active_students / len(employees_df[employees_df['department'] == 'Pedagógico'])
     
-    last_month_days = (current_month - timedelta(days=1)).day
-    kpis['occupancy_last'] = (last_month_data['nights'].sum() / (total_rooms * last_month_days)) * 100
-    kpis['occupancy_change'] = kpis['occupancy'] - kpis['occupancy_last']
-    
-    # RevPAR
-    kpis['revpar'] = kpis['revenue'] / (total_rooms * days_in_month) if days_in_month > 0 else 0
-    kpis['revpar_last'] = kpis['revenue_last'] / (total_rooms * last_month_days) if last_month_days > 0 else 0
-    kpis['revpar_change'] = ((kpis['revpar'] - kpis['revpar_last']) / kpis['revpar_last']) * 100 if kpis['revpar_last'] > 0 else 0
-    
-    # KPIs de customer experience
-    kpis['avg_stay'] = current_data['nights'].mean() if not current_data.empty else 0
-    kpis['cancellation_rate'] = (len(current_data[current_data['status'] == 'canceled']) / len(current_data)) * 100 if len(current_data) > 0 else 0
-    kpis['vip_bookings'] = len(current_data[current_data['client_vip'].isin(['Gold', 'Silver'])])
+    # KPIs de Pessoas
+    kpis['employee_absences'] = employees_df['absences_month'].mean()
+    kpis['teacher_count'] = len(employees_df[employees_df['department'] == 'Pedagógico'])
     
     return kpis
 
@@ -544,124 +520,127 @@ def create_elegant_metric_card(title, value, change, icon):
     </div>
     """
 
-def create_revenue_evolution_chart(df):
-    """Gráfico de evolução da receita mensal"""
-    df['month'] = df['check_in'].dt.to_period('M')
-    monthly_data = df.groupby('month').agg({
-        'total_price': 'sum',
-        'id': 'count',
-        'daily_rate': 'mean'
-    }).reset_index()
-    
-    monthly_data['month_str'] = monthly_data['month'].astype(str)
+def create_grade_evolution_chart(academic_df):
+    """Gráfico de evolução das notas por bimestre"""
+    bimester_grades = academic_df.groupby('bimester')['grade'].mean().reset_index()
     
     fig = go.Figure()
     
     fig.add_trace(go.Scatter(
-        x=monthly_data['month_str'],
-        y=monthly_data['total_price'],
+        x=bimester_grades['bimester'],
+        y=bimester_grades['grade'],
         mode='lines+markers',
-        name='Receita Mensal',
-        line=dict(color='rgba(102, 126, 234, 1)', width=4, shape='spline'),
-        marker=dict(size=12, color='rgba(102, 126, 234, 1)', line=dict(color='white', width=3)),
+        name='Média Geral',
+        line=dict(color='rgba(44, 90, 160, 1)', width=4, shape='spline'),
+        marker=dict(size=12, color='rgba(44, 90, 160, 1)', line=dict(color='white', width=3)),
         fill='tonexty',
-        fillcolor='rgba(102, 126, 234, 0.1)',
-        hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.0f}<extra></extra>'
+        fillcolor='rgba(44, 90, 160, 0.1)',
+        hovertemplate='<b>%{x}º Bimestre</b><br>Média: %{y:.1f}<extra></extra>'
     ))
     
+    # Linha de meta (6.0)
+    fig.add_hline(y=6.0, line_dash="dash", line_color="red", 
+                  annotation_text="Meta de Aprovação (6.0)")
+    
     fig.update_layout(
-        title={'text': '<b>Evolução da Receita Mensal</b>', 'font': {'size': 24, 'family': 'Inter'}, 'x': 0.02},
-        xaxis_title="Período", yaxis_title="Receita (R$)", height=400,
+        title={'text': '<b>Evolução das Notas por Bimestre</b>', 'font': {'size': 24, 'family': 'Inter'}, 'x': 0.02},
+        xaxis_title="Bimestre", yaxis_title="Nota Média", height=400,
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
         font=dict(family="Inter", size=14), hovermode='x unified', showlegend=False
     )
     
     fig.update_xaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=True, zeroline=False)
-    fig.update_yaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=True, zeroline=False, tickformat=',.0f')
+    fig.update_yaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=True, zeroline=False, range=[0, 10])
     
     return fig
 
-def create_occupancy_heatmap_fixed(df):
-    """Cria mapa de calor de ocupação (versão corrigida)"""
-    df['day_of_week'] = df['check_in'].dt.day_name()
-    df['week'] = df['check_in'].dt.isocalendar().week
+def create_financial_overview_chart(financial_df):
+    """Gráfico overview financeiro"""
+    monthly_summary = financial_df.groupby(['month', 'payment_status'])['monthly_fee'].sum().reset_index()
+    monthly_pivot = monthly_summary.pivot(index='month', columns='payment_status', values='monthly_fee').fillna(0)
     
-    occupancy_data = df.groupby(['week', 'day_of_week']).size().reset_index(name='bookings')
+    fig = go.Figure()
     
-    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    occupancy_pivot = occupancy_data.pivot(index='week', columns='day_of_week', values='bookings').fillna(0)
-    occupancy_pivot = occupancy_pivot.reindex(columns=weekdays)
+    if 'Pago' in monthly_pivot.columns:
+        fig.add_trace(go.Bar(
+            x=monthly_pivot.index,
+            y=monthly_pivot['Pago'],
+            name='Receita Recebida',
+            marker_color='rgba(16, 185, 129, 0.8)'
+        ))
     
-    fig = go.Figure(data=go.Heatmap(
-        z=occupancy_pivot.values,
-        x=['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        y=occupancy_pivot.index,
-        colorscale=[[0, '#f8fafc'], [1, '#667eea']],
-        showscale=True,
-        colorbar=dict(title="Reservas"),
-        hoverongaps=False,
-        hovertemplate='Semana %{y}<br>%{x}: %{z} reservas<extra></extra>'
-    ))
+    if 'Em Atraso' in monthly_pivot.columns:
+        fig.add_trace(go.Bar(
+            x=monthly_pivot.index,
+            y=monthly_pivot['Em Atraso'],
+            name='Em Atraso',
+            marker_color='rgba(245, 158, 11, 0.8)'
+        ))
+    
+    if 'Inadimplente' in monthly_pivot.columns:
+        fig.add_trace(go.Bar(
+            x=monthly_pivot.index,
+            y=monthly_pivot['Inadimplente'],
+            name='Inadimplente',
+            marker_color='rgba(239, 68, 68, 0.8)'
+        ))
     
     fig.update_layout(
-        title={'text': '<b>Padrão de Ocupação Semanal</b>', 'font': {'size': 20, 'family': 'Inter'}, 'x': 0.02},
-        xaxis_title="Dia da Semana", yaxis_title="Semana do Ano", height=400,
+        title={'text': '<b>Receita Mensal por Status</b>', 'font': {'size': 20, 'family': 'Inter'}, 'x': 0.02},
+        xaxis_title="Mês", yaxis_title="Receita (R$)", height=400,
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(family="Inter", size=12)
+        font=dict(family="Inter", size=12), barmode='stack'
     )
     
     return fig
 
-def create_property_performance_chart(df):
-    """Gráfico de performance por propriedade"""
-    property_stats = df.groupby('property_name').agg({
-        'total_price': 'sum',
-        'daily_rate': 'mean',
-        'id': 'count'
-    }).reset_index()
-    
-    property_stats = property_stats.sort_values('total_price', ascending=True)
+def create_performance_by_segment_chart(academic_df):
+    """Gráfico de performance por segmento"""
+    segment_performance = academic_df.groupby('segment')['grade'].mean().sort_values(ascending=True)
     
     fig = go.Figure(go.Bar(
-        y=property_stats['property_name'],
-        x=property_stats['total_price'],
+        y=segment_performance.index,
+        x=segment_performance.values,
         orientation='h',
         marker=dict(
-            color=property_stats['total_price'],
-            colorscale=[[0, '#667eea'], [1, '#764ba2']],
+            color=segment_performance.values,
+            colorscale=[[0, '#ef4444'], [0.6, '#f59e0b'], [1, '#10b981']],
             line=dict(color='rgba(255,255,255,0.2)', width=1)
         ),
-        text=[f'R$ {x:,.0f}' for x in property_stats['total_price']],
+        text=[f'{x:.1f}' for x in segment_performance.values],
         textposition='auto',
-        hovertemplate='<b>%{y}</b><br>Receita: R$ %{x:,.0f}<extra></extra>'
+        hovertemplate='<b>%{y}</b><br>Média: %{x:.1f}<extra></extra>'
     ))
     
+    # Linha de meta
+    fig.add_vline(x=6.0, line_dash="dash", line_color="red", 
+                  annotation_text="Meta (6.0)")
+    
     fig.update_layout(
-        title={'text': '<b>Receita por Propriedade</b>', 'font': {'size': 20, 'family': 'Inter'}, 'x': 0.02},
-        xaxis_title="Receita Total (R$)", height=400,
+        title={'text': '<b>Performance Acadêmica por Segmento</b>', 'font': {'size': 20, 'family': 'Inter'}, 'x': 0.02},
+        xaxis_title="Nota Média", height=400,
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
         font=dict(family="Inter", size=12)
     )
     
-    fig.update_xaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=True, zeroline=False, tickformat=',.0f')
+    fig.update_xaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=True, zeroline=False, range=[0, 10])
     fig.update_yaxes(gridcolor='rgba(0,0,0,0.05)', showgrid=False)
     
     return fig
 
-# Interface principal com todos os dashboards
+# Interface principal
 def main():
     # Header elegante
     st.markdown("""
     <div class="elegant-header">
-        <h1>Stays Analytics Suite</h1>
-        <p>Plataforma Completa de Business Intelligence Hoteleira</p>
+        <h1>EduAnalytics</h1>
+        <p>Dashboard Inteligente de Gestão Escolar</p>
     </div>
     """, unsafe_allow_html=True)
     
     # Carregamento de dados
-    with st.spinner('🚀 Carregando dados integrados...'):
-        df_bookings, properties, clients = generate_stays_comprehensive_data()
-        df_promos = generate_promotional_codes()
+    with st.spinner('🚀 Carregando dados da escola...'):
+        students_df, academic_df, financial_df, employees_df, series_structure = generate_school_comprehensive_data()
         time.sleep(0.5)
     
     # Sidebar com filtros globais
@@ -669,106 +648,116 @@ def main():
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         st.markdown('<div class="filter-title">🎯 Filtros Globais</div>', unsafe_allow_html=True)
         
-        date_range = st.date_input(
-            "📅 Período de Análise",
-            value=[datetime.now() - timedelta(days=30), datetime.now()],
-            max_value=datetime.now()
+        # Filtro de segmento
+        segments = st.multiselect(
+            "📚 Segmentos de Ensino",
+            options=students_df['segment'].unique(),
+            default=students_df['segment'].unique()
         )
         
-        regions = st.multiselect(
-            "🏙️ Regiões",
-            options=df_bookings['region'].unique(),
-            default=df_bookings['region'].unique()
+        # Filtro de nível
+        available_levels = students_df[students_df['segment'].isin(segments)]['level'].unique()
+        levels = st.multiselect(
+            "📖 Níveis de Ensino",
+            options=available_levels,
+            default=available_levels
         )
         
-        property_types = st.multiselect(
-            "🏨 Tipos de Propriedade",
-            options=df_bookings['property_type'].unique(),
-            default=df_bookings['property_type'].unique()
+        # Filtro de bimestre
+        bimester = st.selectbox(
+            "📅 Bimestre",
+            options=[1, 2, 3, 4],
+            index=3  # 4º bimestre como padrão
         )
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Insight rápido
+        # Seleção de dashboard
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        st.markdown('<div class="filter-title">⚡ Dashboard Ativo</div>', unsafe_allow_html=True)
+        st.markdown('<div class="filter-title">📊 Dashboard Ativo</div>', unsafe_allow_html=True)
         
         dashboard_selection = st.selectbox(
             "Selecione o Dashboard:",
             [
                 "📊 Visão Executiva",
-                "🏨 Dashboard Operacional", 
+                "🎓 Dashboard Acadêmico", 
                 "💰 Analytics Financeiro",
-                "📋 Central de Propriedades",
-                "🎁 Códigos Promocionais",
-                "👥 Análise de Clientes",
+                "👥 Gestão de Pessoas",
+                "🏫 Dashboard Operacional",
                 "🔍 Business Intelligence"
             ]
         )
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Filtrar dados globalmente
-    filtered_df = df_bookings[
-        (df_bookings['check_in'] >= pd.to_datetime(date_range[0])) &
-        (df_bookings['check_in'] <= pd.to_datetime(date_range[1])) &
-        (df_bookings['region'].isin(regions)) &
-        (df_bookings['property_type'].isin(property_types))
+    # Filtrar dados
+    filtered_students = students_df[
+        (students_df['segment'].isin(segments)) &
+        (students_df['level'].isin(levels))
+    ]
+    
+    filtered_academic = academic_df[
+        (academic_df['segment'].isin(segments)) &
+        (academic_df['level'].isin(levels)) &
+        (academic_df['bimester'] == bimester)
+    ]
+    
+    filtered_financial = financial_df[
+        (financial_df['segment'].isin(segments)) &
+        (financial_df['level'].isin(levels))
     ]
     
     # Calcular KPIs
-    kpis = calculate_comprehensive_kpis(df_bookings)
+    kpis = calculate_school_kpis(filtered_students, filtered_academic, filtered_financial, employees_df)
     
     # Renderizar dashboard selecionado
     if dashboard_selection == "📊 Visão Executiva":
-        render_executive_dashboard(filtered_df, kpis, df_promos)
-    elif dashboard_selection == "🏨 Dashboard Operacional":
-        render_operational_dashboard(filtered_df, properties)
+        render_executive_dashboard(filtered_students, filtered_academic, filtered_financial, employees_df, kpis)
+    elif dashboard_selection == "🎓 Dashboard Acadêmico":
+        render_academic_dashboard(filtered_students, filtered_academic, kpis)
     elif dashboard_selection == "💰 Analytics Financeiro":
-        render_financial_analytics(filtered_df, kpis)
-    elif dashboard_selection == "📋 Central de Propriedades":
-        render_property_central(filtered_df, properties)
-    elif dashboard_selection == "🎁 Códigos Promocionais":
-        render_promo_codes_dashboard(df_promos, filtered_df)
-    elif dashboard_selection == "👥 Análise de Clientes":
-        render_customer_analytics(filtered_df, clients)
+        render_financial_dashboard(filtered_students, filtered_financial, kpis)
+    elif dashboard_selection == "👥 Gestão de Pessoas":
+        render_people_dashboard(employees_df, students_df)
+    elif dashboard_selection == "🏫 Dashboard Operacional":
+        render_operational_dashboard(filtered_students, series_structure)
     elif dashboard_selection == "🔍 Business Intelligence":
-        render_business_intelligence(filtered_df, kpis)
+        render_business_intelligence(filtered_students, filtered_academic, filtered_financial, kpis)
 
-def render_executive_dashboard(df, kpis, promos):
-    """Dashboard Executivo - Visão Geral"""
+def render_executive_dashboard(students_df, academic_df, financial_df, employees_df, kpis):
+    """Dashboard Executivo - Visão Geral da Diretoria"""
     st.markdown("## 📊 Dashboard Executivo")
     
     # KPIs principais
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.markdown(create_elegant_metric_card("Receita Total", f"R$ {kpis['revenue']:,.0f}", kpis['revenue_change'], "💰"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Total de Alunos", str(kpis['total_students']), 3.2, "👥"), unsafe_allow_html=True)
     
     with col2:
-        st.markdown(create_elegant_metric_card("ADR Médio", f"R$ {kpis['adr']:,.0f}", kpis['adr_change'], "📊"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Média Geral", f"{kpis['avg_grade']:.1f}", 5.1, "📊"), unsafe_allow_html=True)
     
     with col3:
-        st.markdown(create_elegant_metric_card("Ocupação", f"{kpis['occupancy']:.1f}%", kpis['occupancy_change'], "🏨"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Taxa de Cobrança", f"{kpis['collection_rate']:.1f}%", -2.3, "💰"), unsafe_allow_html=True)
     
     with col4:
-        st.markdown(create_elegant_metric_card("RevPAR", f"R$ {kpis['revpar']:,.0f}", kpis['revpar_change'], "🎯"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Receita Mensal", f"R$ {kpis['monthly_revenue']:,.0f}", 1.8, "💎"), unsafe_allow_html=True)
     
     # Gráficos principais
     col1, col2 = st.columns([2, 1])
     
     with col1:
         st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Evolução Temporal</div>', unsafe_allow_html=True)
-        revenue_chart = create_revenue_evolution_chart(df)
-        st.plotly_chart(revenue_chart, use_container_width=True)
+        st.markdown('<div class="section-title">Performance Acadêmica</div>', unsafe_allow_html=True)
+        grade_evolution = create_grade_evolution_chart(academic_df)
+        st.plotly_chart(grade_evolution, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Performance</div>', unsafe_allow_html=True)
-        property_chart = create_property_performance_chart(df)
-        st.plotly_chart(property_chart, use_container_width=True)
+        st.markdown('<div class="section-title">Receita por Status</div>', unsafe_allow_html=True)
+        financial_chart = create_financial_overview_chart(financial_df)
+        st.plotly_chart(financial_chart, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Alertas executivos
@@ -778,583 +767,495 @@ def render_executive_dashboard(df, kpis, promos):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if kpis['revenue_change'] > 15:
+        if kpis['avg_grade'] >= 7.0:
             st.markdown(f"""
             <div class="alert-premium success">
-                <div class="alert-title">🎉 Meta Superada</div>
-                <p>Receita cresceu {kpis['revenue_change']:.1f}% vs mês anterior</p>
+                <div class="alert-title">🎉 Excelência Acadêmica</div>
+                <p>Média geral de {kpis['avg_grade']:.1f} - acima da meta!</p>
+            </div>
+            """, unsafe_allow_html=True)
+        elif kpis['avg_grade'] < 6.0:
+            st.markdown(f"""
+            <div class="alert-premium danger">
+                <div class="alert-title">⚠️ Atenção Acadêmica</div>
+                <p>Média geral de {kpis['avg_grade']:.1f} - abaixo da meta</p>
             </div>
             """, unsafe_allow_html=True)
     
     with col2:
-        if kpis['occupancy'] < 70:
+        if kpis['students_at_risk'] > 0:
             st.markdown(f"""
             <div class="alert-premium warning">
-                <div class="alert-title">⚠️ Ocupação Baixa</div>
-                <p>Taxa de ocupação em {kpis['occupancy']:.1f}%</p>
+                <div class="alert-title">📚 Alunos em Risco</div>
+                <p>{kpis['students_at_risk']} estudantes com média < 5.0</p>
             </div>
             """, unsafe_allow_html=True)
     
     with col3:
-        total_promo_roi = ((promos['revenue_impact'].sum() - promos['discount_given'].sum()) / promos['discount_given'].sum()) * 100
-        st.markdown(f"""
-        <div class="alert-premium success">
-            <div class="alert-title">💎 ROI Promoções</div>
-            <p>Retorno de {total_promo_roi:.0f}% nas campanhas</p>
-        </div>
-        """, unsafe_allow_html=True)
+        if kpis['collection_rate'] < 90:
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">💰 Taxa de Cobrança</div>
+                <p>Taxa em {kpis['collection_rate']:.1f}% - ação necessária</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="alert-premium success">
+                <div class="alert-title">💰 Cobrança Eficiente</div>
+                <p>Taxa de {kpis['collection_rate']:.1f}% - excelente!</p>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-def render_operational_dashboard(df, properties):
-    """Dashboard Operacional - Reservas em Tempo Real"""
-    st.markdown("## 🏨 Dashboard Operacional")
+def render_academic_dashboard(students_df, academic_df, kpis):
+    """Dashboard Acadêmico Detalhado"""
+    st.markdown("## 🎓 Dashboard Acadêmico")
     
-    # Filtros específicos
-    col1, col2, col3 = st.columns(3)
+    # Métricas acadêmicas
+    col1, col2, col3, col4, col5 = st.columns(5)
     
-    with col1:
-        status_filter = st.multiselect(
-            "Status das Reservas",
-            options=df['status'].unique(),
-            default=df['status'].unique()
-        )
-    
-    with col2:
-        today_only = st.checkbox("Apenas Hoje", value=True)
-    
-    with col3:
-        urgent_only = st.checkbox("Apenas Urgentes")
-    
-    # Filtrar dados
-    ops_df = df[df['status'].isin(status_filter)]
-    if today_only:
-        ops_df = ops_df[ops_df['check_in'].dt.date == datetime.now().date()]
-    
-    if urgent_only:
-        ops_df = ops_df[ops_df['status'].isin(['pending', 'canceled'])]
-    
-    # Cards de status em tempo real
-    st.markdown("### 📊 Status em Tempo Real")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    status_counts = df['status'].value_counts()
+    approval_rate = (academic_df['grade'] >= 6.0).mean() * 100
+    excellence_rate = (academic_df['grade'] >= 9.0).mean() * 100
+    avg_absences = academic_df['absences'].mean()
     
     with col1:
-        confirmed_count = status_counts.get('confirmed', 0)
-        st.markdown(create_elegant_metric_card("Confirmadas", str(confirmed_count), 12.5, "✅"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Média Geral", f"{kpis['avg_grade']:.1f}", 5.1, "📊"), unsafe_allow_html=True)
     
     with col2:
-        pending_count = status_counts.get('pending', 0)
-        st.markdown(create_elegant_metric_card("Pendentes", str(pending_count), -5.2, "⏳"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Taxa Aprovação", f"{approval_rate:.1f}%", 3.2, "✅"), unsafe_allow_html=True)
     
     with col3:
-        checkin_count = status_counts.get('checked_in', 0)
-        st.markdown(create_elegant_metric_card("Check-ins", str(checkin_count), 8.1, "🔑"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Taxa Excelência", f"{excellence_rate:.1f}%", 8.5, "🌟"), unsafe_allow_html=True)
     
     with col4:
-        canceled_count = status_counts.get('canceled', 0)
-        st.markdown(create_elegant_metric_card("Canceladas", str(canceled_count), -15.3, "❌"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Alunos em Risco", str(kpis['students_at_risk']), -15.2, "⚠️"), unsafe_allow_html=True)
     
-    # Timeline de hoje
-    st.markdown("### 📅 Timeline de Hoje")
+    with col5:
+        st.markdown(create_elegant_metric_card("Faltas Médias", f"{avg_absences:.1f}", -5.3, "📅"), unsafe_allow_html=True)
     
-    today_bookings = df[df['check_in'].dt.date == datetime.now().date()].sort_values('check_in')
+    # Performance por segmento
+    col1, col2 = st.columns(2)
     
-    if not today_bookings.empty:
-        for _, booking in today_bookings.head(10).iterrows():
-            status_class = f"status-{booking['status']}"
-            
+    with col1:
+        st.markdown("### 📈 Performance por Segmento")
+        performance_chart = create_performance_by_segment_chart(academic_df)
+        st.plotly_chart(performance_chart, use_container_width=True)
+    
+    with col2:
+        st.markdown("### 📚 Distribuição de Notas")
+        fig_histogram = px.histogram(
+            academic_df, 
+            x='grade', 
+            bins=20,
+            title="Distribuição das Notas",
+            color_discrete_sequence=['#2c5aa0']
+        )
+        fig_histogram.add_vline(x=6.0, line_dash="dash", line_color="red", annotation_text="Meta")
+        fig_histogram.update_layout(font=dict(family="Inter"))
+        st.plotly_chart(fig_histogram, use_container_width=True)
+    
+    # Top/Bottom performers
+    st.markdown("### 🏆 Performance por Turma")
+    
+    class_performance = academic_df.groupby('class').agg({
+        'grade': 'mean',
+        'student_id': 'count'
+    }).reset_index().sort_values('grade', ascending=False)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🥇 Melhores Turmas")
+        top_classes = class_performance.head(5)
+        for _, row in top_classes.iterrows():
+            performance_level = "high-performance" if row['grade'] >= 7.5 else "medium-performance"
             st.markdown(f"""
-            <div class="status-card {status_class}">
+            <div class="student-card-premium {performance_level}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>{booking['property_name']}</strong><br>
-                        <small>{booking['client_name']} • {booking['guests']} hóspedes</small>
+                        <strong>{row['class']}</strong><br>
+                        <small>{row['student_id']} alunos</small>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-weight: bold;">R$ {booking['total_price']:,.0f}</div>
-                        <div style="font-size: 0.8rem; color: #666;">{booking['check_in'].strftime('%H:%M')}</div>
+                        <div style="font-size: 1.4rem; font-weight: bold; color: #2c5aa0;">
+                            {row['grade']:.1f}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #666;">Média</div>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.info("📭 Nenhuma reserva para hoje")
-    
-    # Ações rápidas
-    st.markdown("### ⚡ Ações Rápidas")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("🔄 Atualizar Status", help="Sincronizar com API"):
-            st.success("Status atualizados!")
     
     with col2:
-        if st.button("📱 Notificar Equipe", help="Enviar alertas"):
-            st.success("Equipe notificada!")
-    
-    with col3:
-        if st.button("📊 Relatório do Dia", help="Gerar relatório"):
-            st.success("Relatório gerado!")
+        st.markdown("#### 📉 Turmas Que Precisam de Atenção")
+        bottom_classes = class_performance.tail(5)
+        for _, row in bottom_classes.iterrows():
+            performance_level = "low-performance" if row['grade'] < 6.0 else "medium-performance"
+            st.markdown(f"""
+            <div class="student-card-premium {performance_level}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{row['class']}</strong><br>
+                        <small>{row['student_id']} alunos</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.4rem; font-weight: bold; color: #ef4444;">
+                            {row['grade']:.1f}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #666;">Média</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-def render_financial_analytics(df, kpis):
-    """Analytics Financeiro Detalhado"""
+def render_financial_dashboard(students_df, financial_df, kpis):
+    """Dashboard Financeiro Detalhado"""
     st.markdown("## 💰 Analytics Financeiro")
     
-    # Métricas financeiras avançadas
+    # Métricas financeiras
+    current_month = datetime.now().month
+    current_financial = financial_df[financial_df['month'] == current_month]
+    
+    total_potential = current_financial['monthly_fee'].sum()
+    total_received = current_financial[current_financial['payment_status'] == 'Pago']['monthly_fee'].sum()
+    total_overdue = current_financial[current_financial['payment_status'] == 'Em Atraso']['monthly_fee'].sum()
+    total_defaulting = current_financial[current_financial['payment_status'] == 'Inadimplente']['monthly_fee'].sum()
+    
     col1, col2, col3, col4, col5 = st.columns(5)
     
-    total_revenue = df['total_price'].sum()
-    avg_booking_value = df['total_price'].mean()
-    
     with col1:
-        st.markdown(create_elegant_metric_card("Receita Total", f"R$ {total_revenue:,.0f}", 15.3, "💎"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Receita Potencial", f"R$ {total_potential:,.0f}", 2.1, "🎯"), unsafe_allow_html=True)
     
     with col2:
-        st.markdown(create_elegant_metric_card("Ticket Médio", f"R$ {avg_booking_value:,.0f}", 8.7, "🎫"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Receita Recebida", f"R$ {total_received:,.0f}", 1.8, "💰"), unsafe_allow_html=True)
     
     with col3:
-        weekend_revenue = df[df['check_in'].dt.weekday >= 5]['total_price'].sum()
-        weekend_pct = (weekend_revenue / total_revenue) * 100
-        st.markdown(create_elegant_metric_card("Rev. Fim de Semana", f"{weekend_pct:.1f}%", 12.1, "🎉"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Em Atraso", f"R$ {total_overdue:,.0f}", 15.2, "⏰"), unsafe_allow_html=True)
     
     with col4:
-        vip_revenue = df[df['client_vip'].isin(['Gold', 'Silver'])]['total_price'].sum()
-        vip_pct = (vip_revenue / total_revenue) * 100
-        st.markdown(create_elegant_metric_card("Receita VIP", f"{vip_pct:.1f}%", 25.4, "👑"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Inadimplência", f"R$ {total_defaulting:,.0f}", -8.1, "❌"), unsafe_allow_html=True)
     
     with col5:
-        direct_revenue = df[df['source'] == 'Direct']['total_price'].sum()
-        direct_pct = (direct_revenue / total_revenue) * 100
-        st.markdown(create_elegant_metric_card("Receita Direta", f"{direct_pct:.1f}%", 18.9, "🎯"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Taxa Cobrança", f"{kpis['collection_rate']:.1f}%", -2.3, "📊"), unsafe_allow_html=True)
     
-    # Análise por canal
+    # Análise de inadimplência
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 📈 Receita por Canal")
-        source_revenue = df.groupby('source')['total_price'].sum().sort_values(ascending=False)
-        
-        fig_source = px.pie(
-            values=source_revenue.values,
-            names=source_revenue.index,
-            title="Distribuição da Receita por Canal",
-            color_discrete_sequence=['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']
-        )
-        fig_source.update_layout(font=dict(family="Inter"))
-        st.plotly_chart(fig_source, use_container_width=True)
+        st.markdown("### 📊 Evolução Mensal da Receita")
+        financial_overview = create_financial_overview_chart(financial_df)
+        st.plotly_chart(financial_overview, use_container_width=True)
     
     with col2:
-        st.markdown("### 💳 Receita por Método de Pagamento")
-        payment_revenue = df.groupby('payment_method')['total_price'].sum().sort_values(ascending=False)
+        st.markdown("### 🎯 Inadimplência por Segmento")
+        segment_default = financial_df[financial_df['payment_status'] == 'Inadimplente'].groupby('segment')['monthly_fee'].sum()
         
-        fig_payment = px.bar(
-            x=payment_revenue.values,
-            y=payment_revenue.index,
-            orientation='h',
-            title="Receita por Método de Pagamento",
-            color=payment_revenue.values,
-            color_continuous_scale=[[0, '#667eea'], [1, '#764ba2']]
-        )
-        fig_payment.update_layout(font=dict(family="Inter"), showlegend=False)
-        st.plotly_chart(fig_payment, use_container_width=True)
+        if not segment_default.empty:
+            fig_default = px.pie(
+                values=segment_default.values,
+                names=segment_default.index,
+                title="Inadimplência por Segmento",
+                color_discrete_sequence=['#ef4444', '#f59e0b', '#10b981', '#3b82f6']
+            )
+            fig_default.update_layout(font=dict(family="Inter"))
+            st.plotly_chart(fig_default, use_container_width=True)
+        else:
+            st.info("😊 Nenhuma inadimplência registrada!")
     
-    # Análise temporal detalhada
-    st.markdown("### 📊 Análise Temporal Avançada")
+    # Relatório de inadimplentes
+    st.markdown("### 📋 Relatório de Inadimplência")
     
-    tab1, tab2, tab3 = st.tabs(["📅 Por Dia da Semana", "📆 Por Mês", "🕒 Por Hora de Booking"])
-    
-    with tab1:
-        df['weekday'] = df['check_in'].dt.day_name()
-        weekday_stats = df.groupby('weekday').agg({
-            'total_price': 'sum',
-            'daily_rate': 'mean',
-            'id': 'count'
-        })
-        
-        fig_weekday = px.bar(
-            x=['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-            y=weekday_stats['total_price'].values,
-            title="Receita por Dia da Semana",
-            color=weekday_stats['total_price'].values,
-            color_continuous_scale=[[0, '#667eea'], [1, '#764ba2']]
-        )
-        fig_weekday.update_layout(font=dict(family="Inter"), showlegend=False)
-        st.plotly_chart(fig_weekday, use_container_width=True)
-    
-    with tab2:
-        monthly_revenue = create_revenue_evolution_chart(df)
-        st.plotly_chart(monthly_revenue, use_container_width=True)
-    
-    with tab3:
-        df['booking_hour'] = df['booking_date'].dt.hour
-        hourly_bookings = df.groupby('booking_hour').size()
-        
-        fig_hourly = px.line(
-            x=hourly_bookings.index,
-            y=hourly_bookings.values,
-            title="Padrão de Reservas por Hora",
-            markers=True
-        )
-        fig_hourly.update_traces(line_color='#667eea', line_width=3)
-        fig_hourly.update_layout(font=dict(family="Inter"))
-        st.plotly_chart(fig_hourly, use_container_width=True)
-
-def render_property_central(df, properties):
-    """Central de Propriedades - Gestão Completa"""
-    st.markdown("## 📋 Central de Propriedades")
-    
-    # Grid de propriedades
-    st.markdown("### 🏨 Status das Propriedades")
-    
-    property_stats = df.groupby('property_name').agg({
-        'total_price': 'sum',
-        'daily_rate': 'mean',
-        'id': 'count',
-        'nights': 'sum'
-    }).reset_index()
-    
-    property_stats['occupancy_rate'] = property_stats['id'] / property_stats['id'].max()
-    
-    # Cards de propriedades em grid
-    cols = st.columns(2)
-    
-    for idx, (_, prop) in enumerate(property_stats.iterrows()):
-        col_idx = idx % 2
-        
-        performance_class = "high-performance" if prop['occupancy_rate'] > 0.7 else "medium-performance" if prop['occupancy_rate'] > 0.4 else "low-performance"
-        performance_color = "#10b981" if prop['occupancy_rate'] > 0.7 else "#f59e0b" if prop['occupancy_rate'] > 0.4 else "#ef4444"
-        
-        cols[col_idx].markdown(f"""
-        <div class="property-card-premium {performance_class}">
-            <div class="property-name">{prop['property_name']}</div>
-            <div class="property-metrics">
-                <div>
-                    <div class="property-occupancy" style="color: {performance_color}">
-                        {prop['occupancy_rate']:.1%}
-                    </div>
-                    <div style="font-size: 0.8rem; color: #64748b;">Taxa de Ocupação</div>
-                </div>
-                <div class="property-details">
-                    <div><strong>R$ {prop['total_price']:,.0f}</strong></div>
-                    <div>{prop['id']} reservas</div>
-                    <div>ADR: R$ {prop['daily_rate']:,.0f}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Calendário de ocupação
-    st.markdown("### 📅 Calendário de Ocupação")
-    occupancy_heatmap = create_occupancy_heatmap_fixed(df)
-    st.plotly_chart(occupancy_heatmap, use_container_width=True)
-    
-    # Manutenções e bloqueios
-    st.markdown("### 🔧 Gestão de Manutenções")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("⚠️ Agendar Manutenção"):
-            st.success("Manutenção agendada!")
-    
-    with col2:
-        if st.button("🚫 Bloquear Período"):
-            st.success("Período bloqueado!")
-    
-    with col3:
-        if st.button("📊 Relatório de Ocupação"):
-            st.success("Relatório gerado!")
-
-def render_promo_codes_dashboard(promos, bookings_df):
-    """Dashboard de Códigos Promocionais"""
-    st.markdown("## 🎁 Gestão de Códigos Promocionais")
-    
-    # Métricas de promoções
-    col1, col2, col3, col4 = st.columns(4)
-    
-    total_revenue_impact = promos['revenue_impact'].sum()
-    total_discount = promos['discount_given'].sum()
-    roi = ((total_revenue_impact - total_discount) / total_discount) * 100
-    active_codes = len(promos[promos['active'] == True])
-    
-    with col1:
-        st.markdown(create_elegant_metric_card("Receita Adicional", f"R$ {total_revenue_impact:,.0f}", 22.3, "💎"), unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(create_elegant_metric_card("Desconto Total", f"R$ {total_discount:,.0f}", -8.7, "🎁"), unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(create_elegant_metric_card("ROI Médio", f"{roi:.1f}%", 34.5, "📈"), unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(create_elegant_metric_card("Códigos Ativos", str(active_codes), 15.0, "🔥"), unsafe_allow_html=True)
-    
-    # Tabela de códigos
-    st.markdown("### 📋 Códigos Promocionais Ativos")
-    
-    promo_display = promos.copy()
-    promo_display['ROI'] = ((promo_display['revenue_impact'] - promo_display['discount_given']) / promo_display['discount_given'] * 100).round(1)
-    promo_display['Usage%'] = (promo_display['uses'] / promo_display['max_uses'] * 100).round(1)
-    promo_display['Status'] = promo_display['active'].map({True: '🟢 Ativo', False: '🔴 Inativo'})
-    
-    st.dataframe(
-        promo_display[['code', 'discount', 'type', 'uses', 'max_uses', 'Usage%', 'ROI', 'Status']].rename(columns={
-            'code': 'Código',
-            'discount': 'Desconto',
-            'type': 'Tipo',
-            'uses': 'Usos',
-            'max_uses': 'Máx Usos',
-            'Usage%': 'Uso %',
-            'Status': 'Status'
-        }),
-        use_container_width=True,
-        hide_index=True
+    defaulters = current_financial[current_financial['payment_status'] == 'Inadimplente'].merge(
+        students_df[['student_id', 'name', 'parent_name', 'parent_phone']], 
+        on='student_id'
     )
     
-    # Performance por código
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### 📊 Performance por Código")
-        fig_promo_perf = px.bar(
-            promo_display,
-            x='code',
-            y='revenue_impact',
-            title="Receita Adicional por Código",
-            color='revenue_impact',
-            color_continuous_scale=[[0, '#667eea'], [1, '#764ba2']]
+    if not defaulters.empty:
+        # Exibir tabela de inadimplentes
+        st.dataframe(
+            defaulters[['name', 'segment', 'level', 'monthly_fee', 'parent_name', 'parent_phone']].rename(columns={
+                'name': 'Aluno',
+                'segment': 'Segmento',
+                'level': 'Nível',
+                'monthly_fee': 'Valor (R$)',
+                'parent_name': 'Responsável',
+                'parent_phone': 'Telefone'
+            }),
+            use_container_width=True,
+            hide_index=True
         )
-        fig_promo_perf.update_layout(font=dict(family="Inter"), showlegend=False)
-        st.plotly_chart(fig_promo_perf, use_container_width=True)
-    
-    with col2:
-        st.markdown("### 🎯 Taxa de Uso")
-        fig_usage = px.bar(
-            promo_display,
-            x='code',
-            y='Usage%',
-            title="Taxa de Utilização (%)",
-            color='Usage%',
-            color_continuous_scale=[[0, '#f59e0b'], [1, '#10b981']]
-        )
-        fig_usage.update_layout(font=dict(family="Inter"), showlegend=False)
-        st.plotly_chart(fig_usage, use_container_width=True)
-    
-    # Criação de novo código
-    st.markdown("### ➕ Criar Novo Código")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        new_code = st.text_input("Código", placeholder="Ex: VERAO2025")
-        discount_type = st.selectbox("Tipo", ["percent", "fixed"])
-        discount_value = st.number_input("Valor do Desconto", min_value=1, value=15)
-    
-    with col2:
-        max_uses = st.number_input("Máximo de Usos", min_value=1, value=100)
-        start_date = st.date_input("Data Início", value=datetime.now().date())
-        end_date = st.date_input("Data Fim", value=datetime.now().date() + timedelta(days=30))
-    
-    with col3:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🎁 Criar Código Promocional", type="primary"):
+        
+        # Botão para exportar
+        if st.button("📊 Exportar Relatório de Inadimplência"):
+            # Simular exportação
+            st.success("✅ Relatório exportado com sucesso!")
             st.balloons()
-            st.success(f"Código {new_code} criado com sucesso!")
+    else:
+        st.success("🎉 Parabéns! Não há inadimplentes no momento.")
 
-def render_customer_analytics(df, clients):
-    """Análise de Clientes Detalhada"""
-    st.markdown("## 👥 Análise de Clientes")
+def render_people_dashboard(employees_df, students_df):
+    """Dashboard de Gestão de Pessoas"""
+    st.markdown("## 👥 Gestão de Pessoas")
     
-    # Métricas de clientes
+    # Métricas de RH
+    active_employees = len(employees_df[employees_df['status'] == 'Ativo'])
+    avg_absences = employees_df['absences_month'].mean()
+    total_payroll = employees_df[employees_df['status'] == 'Ativo']['salary'].sum()
+    student_teacher_ratio = len(students_df) / len(employees_df[employees_df['department'] == 'Pedagógico'])
+    
     col1, col2, col3, col4 = st.columns(4)
     
-    unique_clients = df['client_id'].nunique()
-    vip_clients = df[df['client_vip'].isin(['Gold', 'Silver'])]['client_id'].nunique()
-    repeat_rate = (df.groupby('client_id').size() > 1).mean() * 100
-    avg_ltv = df.groupby('client_id')['total_price'].sum().mean()
-    
     with col1:
-        st.markdown(create_elegant_metric_card("Clientes Únicos", str(unique_clients), 8.5, "👥"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Funcionários Ativos", str(active_employees), 2.1, "👥"), unsafe_allow_html=True)
     
     with col2:
-        st.markdown(create_elegant_metric_card("Clientes VIP", str(vip_clients), 15.2, "👑"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Faltas Médias/Mês", f"{avg_absences:.1f}", -8.2, "📅"), unsafe_allow_html=True)
     
     with col3:
-        st.markdown(create_elegant_metric_card("Taxa de Retorno", f"{repeat_rate:.1f}%", 12.8, "🔄"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Folha Salarial", f"R$ {total_payroll:,.0f}", 3.5, "💰"), unsafe_allow_html=True)
     
     with col4:
-        st.markdown(create_elegant_metric_card("LTV Médio", f"R$ {avg_ltv:,.0f}", 18.3, "💎"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Alunos/Professor", f"{student_teacher_ratio:.1f}", 1.2, "📚"), unsafe_allow_html=True)
     
-    # Análise por segmento
+    # Análise por departamento
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 🌍 Clientes por País")
-        country_stats = df['client_country'].value_counts()
-        fig_country = px.pie(
-            values=country_stats.values,
-            names=country_stats.index,
-            title="Distribuição por País",
-            color_discrete_sequence=['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
+        st.markdown("### 👥 Funcionários por Departamento")
+        dept_count = employees_df['department'].value_counts()
+        
+        fig_dept = px.bar(
+            x=dept_count.index,
+            y=dept_count.values,
+            title="Distribuição por Departamento",
+            color=dept_count.values,
+            color_continuous_scale=[[0, '#2c5aa0'], [1, '#16537e']]
         )
-        fig_country.update_layout(font=dict(family="Inter"))
-        st.plotly_chart(fig_country, use_container_width=True)
+        fig_dept.update_layout(font=dict(family="Inter"), showlegend=False)
+        st.plotly_chart(fig_dept, use_container_width=True)
     
     with col2:
-        st.markdown("### 👑 Segmentação VIP")
-        vip_stats = df['client_vip'].value_counts()
-        fig_vip = px.bar(
-            x=vip_stats.index,
-            y=vip_stats.values,
-            title="Clientes por Segmento",
-            color=vip_stats.values,
-            color_continuous_scale=[[0, '#667eea'], [1, '#764ba2']]
+        st.markdown("### 💰 Média Salarial por Departamento")
+        salary_by_dept = employees_df.groupby('department')['salary'].mean().sort_values(ascending=False)
+        
+        fig_salary = px.bar(
+            y=salary_by_dept.index,
+            x=salary_by_dept.values,
+            orientation='h',
+            title="Média Salarial por Departamento",
+            color=salary_by_dept.values,
+            color_continuous_scale=[[0, '#2c5aa0'], [1, '#16537e']]
         )
-        fig_vip.update_layout(font=dict(family="Inter"), showlegend=False)
-        st.plotly_chart(fig_vip, use_container_width=True)
+        fig_salary.update_layout(font=dict(family="Inter"), showlegend=False)
+        st.plotly_chart(fig_salary, use_container_width=True)
     
-    # Top clientes
-    st.markdown("### 🏆 Top Clientes por Receita")
+    # Análise de absenteísmo
+    st.markdown("### 📊 Análise de Absenteísmo")
     
-    top_clients = df.groupby(['client_id', 'client_name', 'client_vip']).agg({
-        'total_price': 'sum',
-        'id': 'count',
-        'nights': 'sum'
-    }).reset_index().sort_values('total_price', ascending=False).head(10)
+    dept_absences = employees_df.groupby('department')['absences_month'].mean().sort_values(ascending=False)
     
-    for _, client in top_clients.iterrows():
-        vip_badge = {"Gold": "🥇", "Silver": "🥈", "Bronze": "🥉", "Regular": "⭐"}.get(client['client_vip'], "⭐")
+    for dept in dept_absences.index:
+        avg_abs = dept_absences[dept]
+        color = "#ef4444" if avg_abs > 3 else "#f59e0b" if avg_abs > 2 else "#10b981"
         
         st.markdown(f"""
-        <div class="property-card-premium">
+        <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid {color};">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong>{vip_badge} {client['client_name']}</strong><br>
-                    <small>Status: {client['client_vip']} • {client['id']} reservas • {client['nights']} noites</small>
+                    <strong>{dept}</strong><br>
+                    <small>{len(employees_df[employees_df['department'] == dept])} funcionários</small>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #667eea;">R$ {client['total_price']:,.0f}</div>
-                    <div style="font-size: 0.9rem; color: #666;">Lifetime Value</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: {color};">
+                        {avg_abs:.1f} faltas/mês
+                    </div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-def render_business_intelligence(df, kpis):
-    """Business Intelligence Avançado"""
+def render_operational_dashboard(students_df, series_structure):
+    """Dashboard Operacional"""
+    st.markdown("## 🏫 Dashboard Operacional")
+    
+    # Análise de ocupação
+    total_capacity = sum([
+        data['students_per_class'] * data['classes_per_level'] * len(data['levels'])
+        for data in series_structure.values()
+    ])
+    
+    current_students = len(students_df[students_df['status'] == 'Ativo'])
+    occupancy_rate = (current_students / total_capacity) * 100
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(create_elegant_metric_card("Capacidade Total", str(total_capacity), 0, "🏫"), unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(create_elegant_metric_card("Alunos Ativos", str(current_students), 3.2, "👥"), unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(create_elegant_metric_card("Taxa Ocupação", f"{occupancy_rate:.1f}%", 2.8, "📊"), unsafe_allow_html=True)
+    
+    with col4:
+        available_spots = total_capacity - current_students
+        st.markdown(create_elegant_metric_card("Vagas Disponíveis", str(available_spots), -5.2, "🎯"), unsafe_allow_html=True)
+    
+    # Ocupação por segmento
+    st.markdown("### 📊 Ocupação por Segmento")
+    
+    for segment, data in series_structure.items():
+        segment_capacity = data['students_per_class'] * data['classes_per_level'] * len(data['levels'])
+        segment_students = len(students_df[(students_df['segment'] == segment) & (students_df['status'] == 'Ativo')])
+        segment_occupancy = (segment_students / segment_capacity) * 100
+        
+        color = "#10b981" if segment_occupancy >= 90 else "#f59e0b" if segment_occupancy >= 70 else "#ef4444"
+        
+        st.markdown(f"""
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; margin: 1rem 0; border-left: 4px solid {color};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{segment}</strong><br>
+                    <small>{segment_students}/{segment_capacity} alunos</small>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.4rem; font-weight: bold; color: {color};">
+                        {segment_occupancy:.1f}%
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666;">Ocupação</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_business_intelligence(students_df, academic_df, financial_df, kpis):
+    """Business Intelligence e Simulações"""
     st.markdown("## 🔍 Business Intelligence")
+    
+    # Simulador de cenários
+    st.markdown("### 🎯 Simulador de Cenários")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 💰 Simulação Financeira")
+        
+        # Parâmetros da simulação
+        fee_increase = st.slider("Aumento da Mensalidade (%)", 0, 30, 10)
+        evasion_rate = st.slider("Taxa de Evasão Estimada (%)", 0, 20, 5)
+        
+        # Cálculos da simulação
+        current_revenue = financial_df[financial_df['payment_status'] == 'Pago']['monthly_fee'].sum()
+        
+        # Receita com aumento
+        new_revenue = current_revenue * (1 + fee_increase/100)
+        
+        # Receita com evasão
+        students_remaining = len(students_df) * (1 - evasion_rate/100)
+        final_revenue = new_revenue * (students_remaining / len(students_df))
+        
+        revenue_impact = final_revenue - current_revenue
+        
+        st.metric("Receita Atual", f"R$ {current_revenue:,.0f}")
+        st.metric("Receita Projetada", f"R$ {final_revenue:,.0f}", f"R$ {revenue_impact:,.0f}")
+        
+        if revenue_impact > 0:
+            st.success(f"✅ Impacto positivo de R$ {revenue_impact:,.0f}")
+        else:
+            st.error(f"❌ Impacto negativo de R$ {abs(revenue_impact):,.0f}")
+    
+    with col2:
+        st.markdown("#### 📚 Simulação Acadêmica")
+        
+        # Parâmetros acadêmicos
+        investment_education = st.slider("Investimento em Educação (%)", 0, 50, 20)
+        expected_improvement = st.slider("Melhoria Esperada na Nota", 0.0, 2.0, 0.5, 0.1)
+        
+        # Projeções acadêmicas
+        current_avg = kpis['avg_grade']
+        projected_avg = min(10.0, current_avg + expected_improvement)
+        
+        # Taxa de aprovação projetada
+        current_approval = (academic_df['grade'] >= 6.0).mean() * 100
+        projected_approval = min(100, current_approval + (expected_improvement * 10))
+        
+        st.metric("Média Atual", f"{current_avg:.1f}")
+        st.metric("Média Projetada", f"{projected_avg:.1f}", f"+{expected_improvement:.1f}")
+        st.metric("Taxa de Aprovação Projetada", f"{projected_approval:.1f}%", f"+{projected_approval - current_approval:.1f}%")
     
     # Insights automáticos
     st.markdown("### 💡 Insights Automáticos")
     
-    # Análise de sazonalidade
-    df['month'] = df['check_in'].dt.month
-    seasonal_revenue = df.groupby('month')['total_price'].sum()
-    peak_month = seasonal_revenue.idxmax()
-    low_month = seasonal_revenue.idxmin()
-    
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        # Insight de performance
+        best_segment = academic_df.groupby('segment')['grade'].mean().idxmax()
+        best_avg = academic_df.groupby('segment')['grade'].mean().max()
+        
         st.markdown(f"""
         <div class="alert-premium success">
-            <div class="alert-title">📈 Sazonalidade</div>
-            <p>Mês {peak_month} é o mais lucrativo com R$ {seasonal_revenue[peak_month]:,.0f}</p>
-            <p><strong>Recomendação:</strong> Aumentar preços em 20% no período de alta</p>
+            <div class="alert-title">🏆 Melhor Performance</div>
+            <p><strong>{best_segment}</strong> tem a melhor média: {best_avg:.1f}</p>
+            <p><strong>Recomendação:</strong> Replicar metodologia nos outros segmentos</p>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
-        weekend_vs_weekday = df.groupby(df['check_in'].dt.weekday >= 5)['total_price'].sum()
-        weekend_premium = (weekend_vs_weekday[True] / weekend_vs_weekday[False] - 1) * 100
-        
-        st.markdown(f"""
-        <div class="alert-premium warning">
-            <div class="alert-title">🎉 Fins de Semana</div>
-            <p>Receita {weekend_premium:.0f}% maior em fins de semana</p>
-            <p><strong>Oportunidade:</strong> Dynamic pricing para maximize receita</p>
-        </div>
-        """, unsafe_allow_html=True)
+        # Insight financeiro
+        most_defaulting = financial_df[financial_df['payment_status'] == 'Inadimplente']['segment'].value_counts()
+        if not most_defaulting.empty:
+            worst_segment = most_defaulting.index[0]
+            
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">💰 Atenção Financeira</div>
+                <p><strong>{worst_segment}</strong> tem maior inadimplência</p>
+                <p><strong>Ação:</strong> Revisar política de cobrança</p>
+            </div>
+            """, unsafe_allow_html=True)
     
     with col3:
-        cancellation_rate = (len(df[df['status'] == 'canceled']) / len(df)) * 100
-        st.markdown(f"""
-        <div class="alert-premium {'success' if cancellation_rate < 5 else 'warning'}">
-            <div class="alert-title">❌ Taxa de Cancelamento</div>
-            <p>Taxa atual: {cancellation_rate:.1f}%</p>
-            <p><strong>Status:</strong> {'Excelente' if cancellation_rate < 5 else 'Atenção necessária'}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        # Insight operacional
+        occupancy_rate = (len(students_df) / 1000) * 100  # Assumindo capacidade de 1000
+        
+        if occupancy_rate < 80:
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">🎯 Oportunidade</div>
+                <p>Ocupação em {occupancy_rate:.1f}%</p>
+                <p><strong>Potencial:</strong> {1000 - len(students_df)} novas vagas</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="alert-premium success">
+                <div class="alert-title">🏫 Ótima Ocupação</div>
+                <p>Taxa de {occupancy_rate:.1f}%</p>
+                <p><strong>Status:</strong> Capacidade otimizada</p>
+            </div>
+            """, unsafe_allow_html=True)
     
-    # Previsões e projeções
-    st.markdown("### 📊 Projeções e Tendências")
-    
-    tab1, tab2, tab3 = st.tabs(["📈 Previsão Receita", "🎯 Oportunidades", "⚠️ Riscos"])
-    
-    with tab1:
-        # Simulação de previsão baseada em tendência
-        monthly_revenue = df.groupby(df['check_in'].dt.to_period('M'))['total_price'].sum()
-        growth_rate = (monthly_revenue.iloc[-1] / monthly_revenue.iloc[-2] - 1) if len(monthly_revenue) > 1 else 0.1
-        
-        projected_revenue = monthly_revenue.iloc[-1] * (1 + growth_rate)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("Receita Projetada Próximo Mês", f"R$ {projected_revenue:,.0f}", f"{growth_rate*100:.1f}%")
-        
-        with col2:
-            st.metric("Receita Projetada Anual", f"R$ {projected_revenue * 12:,.0f}", f"Base: crescimento atual")
-    
-    with tab2:
-        st.markdown("#### 🚀 Oportunidades Identificadas")
-        
-        opportunities = [
-            "Implementar dynamic pricing pode aumentar receita em 25%",
-            "Foco em clientes VIP pode elevar LTV em 40%",
-            "Expansão para região de menor ocupação com potencial de 30% crescimento",
-            "Programa de fidelidade pode reduzir cancelamentos em 15%",
-            "Upselling de serviços adicionais com margem de 60%"
-        ]
-        
-        for opp in opportunities:
-            st.success(f"💡 {opp}")
-    
-    with tab3:
-        st.markdown("#### ⚠️ Riscos Monitorados")
-        
-        risks = [
-            "Dependência excessiva de canais externos (65% da receita)",
-            "Sazonalidade alta pode impactar fluxo de caixa",
-            "Taxa de ocupação baixa em propriedades específicas",
-            "Concentração geográfica em 2 regiões apenas",
-            "Clientes não-recorrentes representam 70% da base"
-        ]
-        
-        for risk in risks:
-            st.warning(f"⚠️ {risk}")
-    
-    # Relatórios executivos
-    st.markdown("### 📋 Ações Recomendadas")
+    # Exportação de relatórios
+    st.markdown("### 📊 Relatórios Executivos")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📊 Gerar Relatório Executivo", type="primary"):
+        if st.button("📋 Relatório Acadêmico Completo", type="primary"):
             st.balloons()
-            st.success("Relatório executivo gerado e enviado!")
+            st.success("📊 Relatório acadêmico gerado e enviado!")
     
     with col2:
-        if st.button("📈 Análise Preditiva"):
-            st.success("Análise preditiva iniciada!")
+        if st.button("💰 Relatório Financeiro Detalhado"):
+            st.success("💰 Relatório financeiro exportado!")
     
     with col3:
-        if st.button("🎯 Plano de Ação"):
-            st.success("Plano de ação estratégico criado!")
+        if st.button("📈 Dashboard Executivo PDF"):
+            st.success("📈 Dashboard executivo em PDF criado!")
 
 if __name__ == "__main__":
     main()
