@@ -816,12 +816,25 @@ def render_academic_dashboard(students_df, academic_df, kpis):
     # Métricas acadêmicas
     col1, col2, col3, col4, col5 = st.columns(5)
     
-    approval_rate = (academic_df['grade'] >= 6.0).mean() * 100
-    excellence_rate = (academic_df['grade'] >= 9.0).mean() * 100
-    avg_absences = academic_df['absences'].mean()
+    # Calcular métricas com validação
+    if not academic_df.empty:
+        approval_rate = (academic_df['grade'] >= 6.0).mean() * 100
+        excellence_rate = (academic_df['grade'] >= 9.0).mean() * 100
+        avg_absences = academic_df['absences'].mean()
+    else:
+        approval_rate = 0.0
+        excellence_rate = 0.0
+        avg_absences = 0.0
+    
+    # Tratar valores NaN
+    avg_grade_display = kpis.get('avg_grade', 0.0)
+    if pd.isna(avg_grade_display):
+        avg_grade_display = 0.0
+        
+    students_at_risk = kpis.get('students_at_risk', 0)
     
     with col1:
-        st.markdown(create_elegant_metric_card("Média Geral", f"{kpis['avg_grade']:.1f}", 5.1, "📊"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Média Geral", f"{avg_grade_display:.1f}", 5.1, "📊"), unsafe_allow_html=True)
     
     with col2:
         st.markdown(create_elegant_metric_card("Taxa Aprovação", f"{approval_rate:.1f}%", 3.2, "✅"), unsafe_allow_html=True)
@@ -830,7 +843,7 @@ def render_academic_dashboard(students_df, academic_df, kpis):
         st.markdown(create_elegant_metric_card("Taxa Excelência", f"{excellence_rate:.1f}%", 8.5, "🌟"), unsafe_allow_html=True)
     
     with col4:
-        st.markdown(create_elegant_metric_card("Alunos em Risco", str(kpis['students_at_risk']), -15.2, "⚠️"), unsafe_allow_html=True)
+        st.markdown(create_elegant_metric_card("Alunos em Risco", str(students_at_risk), -15.2, "⚠️"), unsafe_allow_html=True)
     
     with col5:
         st.markdown(create_elegant_metric_card("Faltas Médias", f"{avg_absences:.1f}", -5.3, "📅"), unsafe_allow_html=True)
