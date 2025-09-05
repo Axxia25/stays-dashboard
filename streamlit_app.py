@@ -556,7 +556,29 @@ def create_grade_evolution_chart(academic_df):
 
 def create_financial_overview_chart(financial_df):
     """Gráfico overview financeiro"""
+    if financial_df.empty:
+        # Retorna gráfico vazio se não houver dados
+        fig = go.Figure()
+        fig.update_layout(
+            title="Nenhum dado financeiro disponível",
+            annotations=[dict(text="Nenhum dado financeiro disponível", 
+                            xref="paper", yref="paper", x=0.5, y=0.5,
+                            showarrow=False, font=dict(size=16))]
+        )
+        return fig
+    
     monthly_summary = financial_df.groupby(['month', 'payment_status'])['monthly_fee'].sum().reset_index()
+    
+    if monthly_summary.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            title="Nenhum dado financeiro disponível",
+            annotations=[dict(text="Nenhum dado de pagamentos disponível", 
+                            xref="paper", yref="paper", x=0.5, y=0.5,
+                            showarrow=False, font=dict(size=16))]
+        )
+        return fig
+    
     monthly_pivot = monthly_summary.pivot(index='month', columns='payment_status', values='monthly_fee').fillna(0)
     
     fig = go.Figure()
