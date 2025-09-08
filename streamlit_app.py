@@ -1455,5 +1455,262 @@ def render_business_intelligence(students_df, academic_df, financial_df, kpis):
         if st.button("📈 Dashboard Executivo PDF"):
             st.success("📈 Dashboard executivo em PDF criado!")
 
+def render_student_evaluation_dashboard(students_df, academic_df, financial_df):
+    """Dashboard de Avaliação Individual por Aluno"""
+    st.markdown("## 📝 Avaliação Individual por Aluno")
+    
+    if students_df.empty:
+        st.warning("⚠️ Nenhum aluno disponível para os filtros selecionados")
+        return
+    
+    # Seleção do aluno
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        student_options = []
+        for _, student in students_df.iterrows():
+            student_options.append(f"{student['name']} - {student['class']} ({student['student_id']})")
+        
+        selected_student_display = st.selectbox(
+            "👤 Selecione o Aluno para Avaliação:",
+            options=student_options,
+            help="Escolha um aluno específico para análise detalhada"
+        )
+        
+        # Extrair ID do aluno selecionado
+        selected_student_id = selected_student_display.split('(')[-1].replace(')', '')
+        selected_student = students_df[students_df['student_id'] == selected_student_id].iloc[0]
+    
+    with col2:
+        # Informações básicas do aluno
+        st.markdown(f"""
+        <div class="premium-metric-card">
+            <div class="metric-icon">👤</div>
+            <div class="metric-title">Aluno Selecionado</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: #2c5aa0; margin-bottom: 0.5rem;">
+                {selected_student['name']}
+            </div>
+            <div style="font-size: 0.9rem; color: #666;">
+                {selected_student['class']}<br>
+                {selected_student['segment']}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Dados do aluno selecionado
+    student_academic = academic_df[academic_df['student_id'] == selected_student_id]
+    
+    if not student_academic.empty:
+        # Performance geral do aluno
+        student_avg = student_academic['grade'].mean()
+        student_subjects = student_academic.groupby('subject')['grade'].mean().sort_values()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(create_elegant_metric_card("Média Geral", f"{student_avg:.1f}", 0, "📊"), unsafe_allow_html=True)
+        
+        with col2:
+            total_absences = student_academic['absences'].sum()
+            st.markdown(create_elegant_metric_card("Total Faltas", str(total_absences), 0, "📅"), unsafe_allow_html=True)
+        
+        with col3:
+            subjects_below_6 = len(student_subjects[student_subjects < 6.0])
+            st.markdown(create_elegant_metric_card("Matérias < 6.0", str(subjects_below_6), 0, "⚠️"), unsafe_allow_html=True)
+        
+        with col4:
+            best_subject = student_subjects.idxmax() if not student_subjects.empty else "N/A"
+            st.markdown(create_elegant_metric_card("Melhor Matéria", best_subject, 0, "🌟"), unsafe_allow_html=True)
+    
+    # Gerar dados de avaliação
+    evaluation_data = generate_student_evaluation_data(students_df, academic_df)
+    
+    # 1. CONTEÚDOS PARA ATENÇÃO
+    st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">1️⃣ Conteúdos para Atenção</div>', unsafe_allow_html=True)
+    
+    if not student_academic.empty:
+        weak_subjects = student_subjects[student_subjects < 6.0]
+        
+        if not weak_subjects.empty:
+            cols = st.columns(2)
+            for idx, (subject, grade) in enumerate(weak_subjects.items()):
+                col_idx = idx % 2
+                
+                if subject in evaluation_data["attention_content"]:
+                    attention_topics = evaluation_data["attention_content"][subject]
+                    # Selecionar 2-3 tópicos aleatoriamente
+                    selected_topics = np.random.choice(attention_topics, size=min(3, len(attention_topics)), replace=False)
+                    
+                    cols[col_idx].markdown(f"""
+                    <div class="student-card-premium low-performance">
+                        <div style="margin-bottom: 1rem;">
+                            <strong style="color: #ef4444; font-size: 1.1rem;">{subject} - Nota: {grade:.1f}</strong>
+                        </div>
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Conteúdos que precisam de atenção:</div>
+                        <ul style="margin: 0; padding-left: 1.2rem;">
+                            {''.join([f'<li style="margin-bottom: 0.3rem;">{topic}</li>' for topic in selected_topics])}
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.success("🎉 Parabéns! O aluno está com bom desempenho em todas as matérias!")
+    else:
+        st.info("📊 Dados acadêmicos não disponíveis para este aluno")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 2. PLANO DE AÇÃO - POR MATÉRIA
+    st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">2️⃣ Plano de Ação - Por Matéria</div>', unsafe_allow_html=True)
+    
+    if not student_academic.empty and not weak_subjects.empty:
+        for subject, grade in weak_subjects.items():
+            if subject in evaluation_data["action_strategies"]:
+                strategies = evaluation_data["action_strategies"][subject]
+                
+                st.markdown(f"""
+                <div class="student-card-premium medium-performance" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #2c5aa0;">{subject}</h4>
+                        <span style="background: #f59e0b; color: white; padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.9rem;">
+                            Nota Atual: {grade:.1f}
+                        </span>
+                    </div>
+                    <div style="font-weight: 600; margin-bottom: 0.8rem;">Estratégias Recomendadas:</div>
+                    <div style="display: grid; gap: 0.5rem;">
+                        {''.join([f'''
+                        <div style="background: #f8fafc; padding: 0.8rem; border-radius: 8px; border-left: 3px solid #2c5aa0;">
+                            <strong>📌 {strategy}</strong>
+                        </div>
+                        ''' for strategy in strategies])}
+                    </div>
+                    <div style="margin-top: 1rem; padding: 0.8rem; background: #e1f5fe; border-radius: 8px;">
+                        <strong>🎯 Meta:</strong> Atingir nota 7.0 ou superior até o próximo bimestre
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.success("✅ Nenhum plano de ação específico necessário - desempenho satisfatório!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 3. PLANO DE AÇÃO - FAMÍLIA
+    st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">3️⃣ Plano de Ação - Família</div>', unsafe_allow_html=True)
+    
+    family_actions = evaluation_data["family_plans"]
+    selected_family_actions = np.random.choice(family_actions, size=5, replace=False)
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #f3e5f5 0%, #e8eaf6 100%); padding: 1.5rem; border-radius: 16px; margin-bottom: 1rem;">
+        <h4 style="color: #2c5aa0; margin-bottom: 1rem; display: flex; align-items: center;">
+            👨‍👩‍👧‍👦 Orientações para a Família
+        </h4>
+        <p style="margin-bottom: 1rem; color: #555;">
+            O envolvimento familiar é fundamental para o sucesso escolar. Seguem orientações específicas para apoiar o desenvolvimento do(a) <strong>{selected_student['name']}</strong>:
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    cols = st.columns(2)
+    for idx, action in enumerate(selected_family_actions):
+        col_idx = idx % 2
+        
+        cols[col_idx].markdown(f"""
+        <div style="background: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.8rem; border-left: 4px solid #2c5aa0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <strong style="color: #2c5aa0;">📋 Ação {idx + 1}:</strong><br>
+            <span style="color: #333; margin-top: 0.5rem; display: block;">{action}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 4. OBJETIVO GERAL
+    st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">4️⃣ Objetivo Geral</div>', unsafe_allow_html=True)
+    
+    general_obj = np.random.choice(evaluation_data["general_objectives"])
+    
+    st.markdown(f"""
+    <div class="alert-premium success" style="text-align: center; padding: 2rem;">
+        <div class="alert-title" style="font-size: 1.3rem; margin-bottom: 1rem;">🎯 Objetivo Geral para {selected_student['name']}</div>
+        <p style="font-size: 1.1rem; margin: 0; font-weight: 500; line-height: 1.6;">
+            {general_obj}
+        </p>
+        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.3); border-radius: 12px;">
+            <strong>Prazo:</strong> Final do ano letivo 2025<br>
+            <strong>Responsáveis:</strong> Equipe pedagógica, família e aluno
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 5. OBJETIVOS ESPECÍFICOS
+    st.markdown('<div class="elegant-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">5️⃣ Objetivos Específicos</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    specific_areas = ["Acadêmico", "Social", "Pessoal"]
+    cols = [col1, col2, col3]
+    
+    for idx, area in enumerate(specific_areas):
+        objectives = evaluation_data["specific_objectives"][area]
+        selected_objectives = np.random.choice(objectives, size=3, replace=False)
+        
+        area_colors = {
+            "Acadêmico": "#2c5aa0",
+            "Social": "#10b981", 
+            "Pessoal": "#f59e0b"
+        }
+        
+        area_icons = {
+            "Acadêmico": "📚",
+            "Social": "👥",
+            "Pessoal": "🌟"
+        }
+        
+        cols[idx].markdown(f"""
+        <div style="background: white; border-radius: 16px; padding: 1.5rem; height: 320px; border: 2px solid {area_colors[area]};">
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{area_icons[area]}</div>
+                <h4 style="margin: 0; color: {area_colors[area]};">Área {area}</h4>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                {''.join([f'''
+                <div style="background: {area_colors[area]}15; padding: 0.8rem; border-radius: 8px; border-left: 3px solid {area_colors[area]};">
+                    <small style="font-weight: 600; color: {area_colors[area]};">• {obj}</small>
+                </div>
+                ''' for obj in selected_objectives])}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Botões de ação
+    st.markdown("### 📊 Ações do Sistema")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("📋 Gerar Relatório Completo", type="primary"):
+            st.success(f"✅ Relatório completo de {selected_student['name']} gerado!")
+            st.balloons()
+    
+    with col2:
+        if st.button("📧 Enviar para Família"):
+            st.success("📧 Plano enviado para os responsáveis!")
+    
+    with col3:
+        if st.button("👥 Agendar Reunião"):
+            st.success("📅 Reunião agendada para próxima semana!")
+    
+    with col4:
+        if st.button("🔄 Atualizar Avaliação"):
+            st.success("🔄 Avaliação atualizada no sistema!")
+
 if __name__ == "__main__":
     main()
