@@ -473,6 +473,104 @@ def generate_school_comprehensive_data():
     
     return students_df, academic_df, financial_df, employees_df, series_structure
 
+@st.cache_data(ttl=300)
+def generate_student_evaluation_data(students_df, academic_df):
+    """Gera dados específicos para avaliação individual dos alunos"""
+    
+    # Conteúdos que precisam de atenção por matéria
+    attention_content = {
+        "Português": ["Interpretação de texto", "Ortografia", "Gramática", "Redação", "Literatura"],
+        "Matemática": ["Operações básicas", "Frações", "Geometria", "Álgebra", "Resolução de problemas"],
+        "Ciências": ["Sistema solar", "Corpo humano", "Meio ambiente", "Experimentos", "Método científico"],
+        "História": ["Brasil colonial", "Independência", "República", "Idade média", "Civilizações antigas"],
+        "Geografia": ["Continentes", "Clima", "Relevo", "População", "Economia"],
+        "Inglês": ["Vocabulário", "Gramática", "Conversação", "Leitura", "Escrita"],
+        "Artes": ["Técnicas de desenho", "História da arte", "Cores", "Formas", "Criatividade"],
+        "Ed. Física": ["Coordenação motora", "Esportes coletivos", "Resistência", "Flexibilidade", "Regras"]
+    }
+    
+    # Estratégias de plano de ação por matéria
+    action_strategies = {
+        "Português": [
+            "Leitura diária de 30 minutos",
+            "Exercícios de ortografia específicos",
+            "Produção textual orientada",
+            "Jogos educativos de palavras",
+            "Acompanhamento individualizado"
+        ],
+        "Matemática": [
+            "Exercícios práticos com material concreto",
+            "Resolução de problemas do cotidiano",
+            "Jogos matemáticos",
+            "Revisão de conceitos básicos",
+            "Monitoria entre pares"
+        ],
+        "Ciências": [
+            "Experimentos práticos",
+            "Observação da natureza",
+            "Documentários educativos",
+            "Projetos de pesquisa",
+            "Visitas técnicas"
+        ]
+    }
+    
+    # Planos de ação para família
+    family_plans = [
+        "Estabelecer rotina de estudos em casa (1h diária)",
+        "Acompanhar diariamente as atividades escolares",
+        "Limitar tempo de tela e incentivar leitura",
+        "Criar ambiente adequado para estudos",
+        "Participar ativamente das reuniões escolares",
+        "Reforçar conceitos trabalhados em sala",
+        "Estimular autonomia e responsabilidade",
+        "Buscar apoio profissional quando necessário"
+    ]
+    
+    # Objetivos gerais
+    general_objectives = [
+        "Desenvolver autonomia nos estudos",
+        "Melhorar o rendimento acadêmico geral",
+        "Fortalecer hábitos de estudo",
+        "Aumentar a participação em sala",
+        "Desenvolver pensamento crítico",
+        "Melhorar relacionamento interpessoal",
+        "Estimular criatividade e inovação",
+        "Preparar para próxima etapa escolar"
+    ]
+    
+    # Objetivos específicos por área
+    specific_objectives = {
+        "Acadêmico": [
+            "Atingir média 7.0 em todas as disciplinas",
+            "Reduzir faltas para menos de 5% do total",
+            "Entregar 100% das atividades no prazo",
+            "Melhorar concentração durante as aulas",
+            "Desenvolver técnicas de estudo eficazes"
+        ],
+        "Social": [
+            "Participar ativamente das atividades em grupo",
+            "Desenvolver habilidades de comunicação",
+            "Respeitar regras de convivência",
+            "Ajudar colegas com dificuldades",
+            "Liderar projetos colaborativos"
+        ],
+        "Pessoal": [
+            "Aumentar autoestima e autoconfiança",
+            "Desenvolver senso de responsabilidade",
+            "Gerenciar tempo de forma eficiente",
+            "Controlar ansiedade em avaliações",
+            "Estabelecer metas pessoais de aprendizado"
+        ]
+    }
+    
+    return {
+        "attention_content": attention_content,
+        "action_strategies": action_strategies,
+        "family_plans": family_plans,
+        "general_objectives": general_objectives,
+        "specific_objectives": specific_objectives
+    }
+
 def calculate_school_kpis(students_df, academic_df, financial_df, employees_df):
     """Calcula KPIs principais da escola"""
     kpis = {}
@@ -769,6 +867,7 @@ def main():
                 "💰 Analytics Financeiro",
                 "👥 Gestão de Pessoas",
                 "🏫 Dashboard Operacional",
+                "📝 Avaliação por Alunos",
                 "🔍 Business Intelligence"
             ]
         )
@@ -806,6 +905,8 @@ def main():
         render_people_dashboard(employees_df, students_df)
     elif dashboard_selection == "🏫 Dashboard Operacional":
         render_operational_dashboard(filtered_students, series_structure)
+    elif dashboard_selection == "📝 Avaliação por Alunos":
+        render_student_evaluation_dashboard(filtered_students, filtered_academic, filtered_financial)
     elif dashboard_selection == "🔍 Business Intelligence":
         render_business_intelligence(filtered_students, filtered_academic, filtered_financial, kpis)
 
@@ -1313,148 +1414,6 @@ def render_operational_dashboard(students_df, series_structure):
         </div>
         """, unsafe_allow_html=True)
 
-def render_business_intelligence(students_df, academic_df, financial_df, kpis):
-    """Business Intelligence e Simulações"""
-    st.markdown("## 🔍 Business Intelligence")
-    
-    # Simulador de cenários
-    st.markdown("### 🎯 Simulador de Cenários")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 💰 Simulação Financeira")
-        
-        # Parâmetros da simulação
-        fee_increase = st.slider("Aumento da Mensalidade (%)", 0, 30, 10)
-        evasion_rate = st.slider("Taxa de Evasão Estimada (%)", 0, 20, 5)
-        
-        # Cálculos da simulação
-        current_revenue = financial_df[financial_df['payment_status'] == 'Pago']['monthly_fee'].sum()
-        
-        # Receita com aumento
-        new_revenue = current_revenue * (1 + fee_increase/100)
-        
-        # Receita com evasão
-        students_remaining = len(students_df) * (1 - evasion_rate/100)
-        final_revenue = new_revenue * (students_remaining / len(students_df))
-        
-        revenue_impact = final_revenue - current_revenue
-        
-        st.metric("Receita Atual", f"R$ {current_revenue:,.0f}")
-        st.metric("Receita Projetada", f"R$ {final_revenue:,.0f}", f"R$ {revenue_impact:,.0f}")
-        
-        if revenue_impact > 0:
-            st.success(f"✅ Impacto positivo de R$ {revenue_impact:,.0f}")
-        else:
-            st.error(f"❌ Impacto negativo de R$ {abs(revenue_impact):,.0f}")
-    
-    with col2:
-        st.markdown("#### 📚 Simulação Acadêmica")
-        
-        # Parâmetros acadêmicos
-        investment_education = st.slider("Investimento em Educação (%)", 0, 50, 20)
-        expected_improvement = st.slider("Melhoria Esperada na Nota", 0.0, 2.0, 0.5, 0.1)
-        
-        # Projeções acadêmicas
-        current_avg = kpis['avg_grade']
-        projected_avg = min(10.0, current_avg + expected_improvement)
-        
-        # Taxa de aprovação projetada
-        current_approval = (academic_df['grade'] >= 6.0).mean() * 100 if not academic_df.empty else 0
-        projected_approval = min(100, current_approval + (expected_improvement * 10))
-        
-        st.metric("Média Atual", f"{current_avg:.1f}")
-        st.metric("Média Projetada", f"{projected_avg:.1f}", f"+{expected_improvement:.1f}")
-        st.metric("Taxa de Aprovação Projetada", f"{projected_approval:.1f}%", f"+{projected_approval - current_approval:.1f}%")
-    
-    # Insights automáticos
-    st.markdown("### 💡 Insights Automáticos")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        # Insight de performance
-        if not academic_df.empty:
-            best_segment = academic_df.groupby('segment')['grade'].mean().idxmax()
-            best_avg = academic_df.groupby('segment')['grade'].mean().max()
-            
-            st.markdown(f"""
-            <div class="alert-premium success">
-                <div class="alert-title">🏆 Melhor Performance</div>
-                <p><strong>{best_segment}</strong> tem a melhor média: {best_avg:.1f}</p>
-                <p><strong>Recomendação:</strong> Replicar metodologia nos outros segmentos</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="alert-premium warning">
-                <div class="alert-title">📊 Dados Acadêmicos</div>
-                <p>Nenhum dado acadêmico disponível para análise</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with col2:
-        # Insight financeiro
-        most_defaulting = financial_df[financial_df['payment_status'] == 'Inadimplente']['segment'].value_counts()
-        if not most_defaulting.empty:
-            worst_segment = most_defaulting.index[0]
-            
-            st.markdown(f"""
-            <div class="alert-premium warning">
-                <div class="alert-title">💰 Atenção Financeira</div>
-                <p><strong>{worst_segment}</strong> tem maior inadimplência</p>
-                <p><strong>Ação:</strong> Revisar política de cobrança</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="alert-premium success">
-                <div class="alert-title">💰 Situação Financeira</div>
-                <p>Não há inadimplência registrada</p>
-                <p><strong>Status:</strong> Excelente controle financeiro</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with col3:
-        # Insight operacional
-        occupancy_rate = (len(students_df) / 1000) * 100  # Assumindo capacidade de 1000
-        
-        if occupancy_rate < 80:
-            st.markdown(f"""
-            <div class="alert-premium warning">
-                <div class="alert-title">🎯 Oportunidade</div>
-                <p>Ocupação em {occupancy_rate:.1f}%</p>
-                <p><strong>Potencial:</strong> {1000 - len(students_df)} novas vagas</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="alert-premium success">
-                <div class="alert-title">🏫 Ótima Ocupação</div>
-                <p>Taxa de {occupancy_rate:.1f}%</p>
-                <p><strong>Status:</strong> Capacidade otimizada</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Exportação de relatórios
-    st.markdown("### 📊 Relatórios Executivos")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("📋 Relatório Acadêmico Completo", type="primary"):
-            st.balloons()
-            st.success("📊 Relatório acadêmico gerado e enviado!")
-    
-    with col2:
-        if st.button("💰 Relatório Financeiro Detalhado"):
-            st.success("💰 Relatório financeiro exportado!")
-    
-    with col3:
-        if st.button("📈 Dashboard Executivo PDF"):
-            st.success("📈 Dashboard executivo em PDF criado!")
-
 def render_student_evaluation_dashboard(students_df, academic_df, financial_df):
     """Dashboard de Avaliação Individual por Aluno"""
     st.markdown("## 📝 Avaliação Individual por Aluno")
@@ -1711,6 +1670,148 @@ def render_student_evaluation_dashboard(students_df, academic_df, financial_df):
     with col4:
         if st.button("🔄 Atualizar Avaliação"):
             st.success("🔄 Avaliação atualizada no sistema!")
+
+def render_business_intelligence(students_df, academic_df, financial_df, kpis):
+    """Business Intelligence e Simulações"""
+    st.markdown("## 🔍 Business Intelligence")
+    
+    # Simulador de cenários
+    st.markdown("### 🎯 Simulador de Cenários")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 💰 Simulação Financeira")
+        
+        # Parâmetros da simulação
+        fee_increase = st.slider("Aumento da Mensalidade (%)", 0, 30, 10)
+        evasion_rate = st.slider("Taxa de Evasão Estimada (%)", 0, 20, 5)
+        
+        # Cálculos da simulação
+        current_revenue = financial_df[financial_df['payment_status'] == 'Pago']['monthly_fee'].sum()
+        
+        # Receita com aumento
+        new_revenue = current_revenue * (1 + fee_increase/100)
+        
+        # Receita com evasão
+        students_remaining = len(students_df) * (1 - evasion_rate/100)
+        final_revenue = new_revenue * (students_remaining / len(students_df))
+        
+        revenue_impact = final_revenue - current_revenue
+        
+        st.metric("Receita Atual", f"R$ {current_revenue:,.0f}")
+        st.metric("Receita Projetada", f"R$ {final_revenue:,.0f}", f"R$ {revenue_impact:,.0f}")
+        
+        if revenue_impact > 0:
+            st.success(f"✅ Impacto positivo de R$ {revenue_impact:,.0f}")
+        else:
+            st.error(f"❌ Impacto negativo de R$ {abs(revenue_impact):,.0f}")
+    
+    with col2:
+        st.markdown("#### 📚 Simulação Acadêmica")
+        
+        # Parâmetros acadêmicos
+        investment_education = st.slider("Investimento em Educação (%)", 0, 50, 20)
+        expected_improvement = st.slider("Melhoria Esperada na Nota", 0.0, 2.0, 0.5, 0.1)
+        
+        # Projeções acadêmicas
+        current_avg = kpis['avg_grade']
+        projected_avg = min(10.0, current_avg + expected_improvement)
+        
+        # Taxa de aprovação projetada
+        current_approval = (academic_df['grade'] >= 6.0).mean() * 100 if not academic_df.empty else 0
+        projected_approval = min(100, current_approval + (expected_improvement * 10))
+        
+        st.metric("Média Atual", f"{current_avg:.1f}")
+        st.metric("Média Projetada", f"{projected_avg:.1f}", f"+{expected_improvement:.1f}")
+        st.metric("Taxa de Aprovação Projetada", f"{projected_approval:.1f}%", f"+{projected_approval - current_approval:.1f}%")
+    
+    # Insights automáticos
+    st.markdown("### 💡 Insights Automáticos")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Insight de performance
+        if not academic_df.empty:
+            best_segment = academic_df.groupby('segment')['grade'].mean().idxmax()
+            best_avg = academic_df.groupby('segment')['grade'].mean().max()
+            
+            st.markdown(f"""
+            <div class="alert-premium success">
+                <div class="alert-title">🏆 Melhor Performance</div>
+                <p><strong>{best_segment}</strong> tem a melhor média: {best_avg:.1f}</p>
+                <p><strong>Recomendação:</strong> Replicar metodologia nos outros segmentos</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">📊 Dados Acadêmicos</div>
+                <p>Nenhum dado acadêmico disponível para análise</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col2:
+        # Insight financeiro
+        most_defaulting = financial_df[financial_df['payment_status'] == 'Inadimplente']['segment'].value_counts()
+        if not most_defaulting.empty:
+            worst_segment = most_defaulting.index[0]
+            
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">💰 Atenção Financeira</div>
+                <p><strong>{worst_segment}</strong> tem maior inadimplência</p>
+                <p><strong>Ação:</strong> Revisar política de cobrança</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="alert-premium success">
+                <div class="alert-title">💰 Situação Financeira</div>
+                <p>Não há inadimplência registrada</p>
+                <p><strong>Status:</strong> Excelente controle financeiro</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col3:
+        # Insight operacional
+        occupancy_rate = (len(students_df) / 1000) * 100  # Assumindo capacidade de 1000
+        
+        if occupancy_rate < 80:
+            st.markdown(f"""
+            <div class="alert-premium warning">
+                <div class="alert-title">🎯 Oportunidade</div>
+                <p>Ocupação em {occupancy_rate:.1f}%</p>
+                <p><strong>Potencial:</strong> {1000 - len(students_df)} novas vagas</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="alert-premium success">
+                <div class="alert-title">🏫 Ótima Ocupação</div>
+                <p>Taxa de {occupancy_rate:.1f}%</p>
+                <p><strong>Status:</strong> Capacidade otimizada</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Exportação de relatórios
+    st.markdown("### 📊 Relatórios Executivos")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("📋 Relatório Acadêmico Completo", type="primary"):
+            st.balloons()
+            st.success("📊 Relatório acadêmico gerado e enviado!")
+    
+    with col2:
+        if st.button("💰 Relatório Financeiro Detalhado"):
+            st.success("💰 Relatório financeiro exportado!")
+    
+    with col3:
+        if st.button("📈 Dashboard Executivo PDF"):
+            st.success("📈 Dashboard executivo em PDF criado!")
 
 if __name__ == "__main__":
     main()
